@@ -15,14 +15,22 @@ export const GAME_CONFIG = {
   obstacleHeight: 52,
   obstacleWarningMs: 220,
   scorePerMeter: 1,
+  coinValue: 1,
+  powerUpSpawnChance: 0.16,
+  shieldDurationMs: 10000,
+  magnetDurationMs: 8000,
+  magnetRange: 120,
   background: 0x07111f,
   road: 0x17263a,
   laneLine: 0x3b526d,
   player: 0x38e8b0,
   obstacle: 0xff5d73,
   obstacleWide: 0xff8c42,
+  coin: 0xffd166,
+  shield: 0x66b6ff,
+  magnet: 0xd084ff,
   accent: 0xffd166,
-  danger: 0xff5d73,
+  danger: 0xff6b6b,
   overlay: 0x050a12
 } as const;
 
