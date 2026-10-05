@@ -1,11 +1,1 @@
-export const GAME_CONFIG = {
-  title: 'Dash Dodge',
-  lanes: 3,
-  laneChangeMs: 100,
-  playerYRatio: 0.78,
-  playerRadius: 18,
-  worldSpeed: 280,
-  fixedStepMs: 1000 / 60,
-  graceMs: 1500,
-  colors: { bg: 0x07111f, road: 0x10233b, lane: 0x28415f, player: 0x35e0ff, accent: 0xffd447 }
-} as const;
+export const GAME_CONFIG = { width:390,height:844,lanes:3,roadWidth:270,playerYRatio:.78,laneTweenMs:100,worldSpeed:260,maxWorldSpeed:520,speedRampPerSecond:7,laneInputBufferMs:140,background:0x07111f,road:0x17263a,laneLine:0x3b526d,player:0x38e8b0,accent:0xffd166 } as const;

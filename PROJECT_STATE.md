@@ -1,22 +1,17 @@
 # Dash Dodge — Project State
 
-## Day 1 — 2026-10-05
-### Done
-- Initialized TypeScript + Phaser 3 + Vite project.
-- Added centralized `src/config/gameConfig.ts` for Day 1 tuning.
-- Added portrait-oriented responsive Phaser canvas and mobile touch CSS.
-- Built three-lane scrolling-world foundation with placeholder player.
-- Implemented tap-left/right and swipe lane switching with ~100 ms tween.
-- Added distance score placeholder and basic HUD.
+## Day 1
+- Phaser 3 + TypeScript + Vite foundation is in place.
+- Playable 3-lane road with responsive resize.
+- Placeholder player supports left/right swipe, tap-side, A/D and arrow controls.
+- Lane changes use a short tween and input buffer.
+- Endless scrolling lane markers and speed ramp are implemented.
+- Distance and speed HUD are implemented.
 
-### Stubbed
-- Obstacles, collisions, spawn validator, coins, power-ups, meta screens, save system, audio, particles, Capacitor packaging, and tests are scheduled for later days.
+## Decisions
+- Portrait-first mobile canvas; CSS prevents page scrolling.
+- All Day 1 tuning values live in `src/config/gameConfig.ts`.
+- Obstacles, collisions, scoring, persistence, shop, and meta systems are intentionally Day 2+ work.
 
-### Decisions
-- Repository: `Beginner200/Speedrun`.
-- Working title remains `Dash Dodge`; title is centralized for easy renaming.
-- Kept visuals procedural to avoid asset/license risk and download bloat.
-- Used Phaser Scale RESIZE so the core scene can adapt to different phone aspect ratios.
-
-### Next step
-Day 2: obstacles, deterministic spawn system with safe-path validator, collision, game-over/restart, and scoring.
+## Next
+Day 2: obstacles, safe-path spawning, collision/game-over flow, restart, and scoring.
