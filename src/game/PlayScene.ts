@@ -3,7 +3,7 @@ import { GAME_CONFIG } from '../config/gameConfig';
 import { buildSafePattern } from '../core/obstacle';
 import { SaveService, getSelectedSkin } from '../core/saveService';
 
-type Obstacle = Phaser.GameObjects.Rectangle & { lane: number; wide?: boolean };
+type Obstacle = Phaser.GameObjects.Rectangle & { lane: number; wide?: boolean; warned?: boolean };
 type Pickup = Phaser.GameObjects.Arc & { kind: 'coin' | 'shield' | 'magnet'; lane: number; value: number };
 
 export class PlayScene extends Phaser.Scene {
@@ -13,12 +13,13 @@ export class PlayScene extends Phaser.Scene {
   private laneLines: Phaser.GameObjects.Rectangle[] = [];
   private obstacles: Obstacle[] = [];
   private pickups: Pickup[] = [];
-  private speed: number = GAME_CONFIG.worldSpeed;
+  private speed = GAME_CONFIG.worldSpeed;
   private distance = 0;
   private score = 0;
   private scoreBonus = 0;
   private bestScore = 0;
   private coins = 0;
+  private nearMisses = 0;
   private combo = 0;
   private comboTimer = 0;
   private shieldTimer = 0;
@@ -32,7 +33,7 @@ export class PlayScene extends Phaser.Scene {
   private comboText!: Phaser.GameObjects.Text;
   private gameOverPanel!: Phaser.GameObjects.Container;
   private inputCooldown = 0;
-  private spawnTimer: number = GAME_CONFIG.obstacleSpawnStartMs;
+  private spawnTimer = GAME_CONFIG.obstacleSpawnStartMs;
   private touchStartX: number | null = null;
   private isGameOver = false;
   private runSettled = false;
@@ -53,6 +54,7 @@ export class PlayScene extends Phaser.Scene {
     this.scoreBonus = 0;
     this.bestScore = save.bestScore;
     this.coins = 0;
+    this.nearMisses = 0;
     this.combo = 0;
     this.comboTimer = 0;
     this.shieldTimer = 0;
@@ -119,7 +121,6 @@ export class PlayScene extends Phaser.Scene {
       const progress = Math.min(1, this.speed / GAME_CONFIG.maxWorldSpeed);
       this.spawnTimer = Phaser.Math.Linear(GAME_CONFIG.obstacleSpawnStartMs, GAME_CONFIG.obstacleSpawnMinMs, progress);
     }
-
     this.moveObstacles(dt);
     this.movePickups(dt);
     this.updateHud();
@@ -132,6 +133,7 @@ export class PlayScene extends Phaser.Scene {
       const obstacle = this.add.rectangle(this.laneX[lane], spawnY, GAME_CONFIG.obstacleWidth, GAME_CONFIG.obstacleHeight, pattern.blockedLanes.length > 1 ? GAME_CONFIG.obstacleWide : GAME_CONFIG.obstacle).setDepth(2).setStrokeStyle(2, 0xffffff, 0.45) as Obstacle;
       obstacle.lane = lane;
       obstacle.wide = pattern.blockedLanes.length > 1;
+      obstacle.warned = false;
       this.obstacles.push(obstacle);
     }
     if (Math.random() < 0.72) this.spawnCoinOnSafeLane(pattern.blockedLanes, spawnY - 95);
@@ -156,6 +158,11 @@ export class PlayScene extends Phaser.Scene {
     for (let i = this.obstacles.length - 1; i >= 0; i--) {
       const obstacle = this.obstacles[i];
       obstacle.y += this.speed * dt;
+      const warningDistance = Math.max(150, this.speed * GAME_CONFIG.obstacleWarningMs / 1000);
+      if (!obstacle.warned && obstacle.y > -warningDistance) {
+        obstacle.warned = true;
+        this.tweens.add({ targets: obstacle, alpha: 0.55, duration: 70, yoyo: true, repeat: 2 });
+      }
       if (obstacle.y > this.scale.height + 80) { obstacle.destroy(); this.obstacles.splice(i, 1); continue; }
       if (this.reviveInvulnerabilityTimer <= 0 && this.isColliding(this.player, obstacle)) {
         if (this.shieldTimer > 0) { this.shieldTimer = 0; this.flashPlayer(); obstacle.destroy(); this.obstacles.splice(i, 1); continue; }
@@ -187,6 +194,7 @@ export class PlayScene extends Phaser.Scene {
 
   private addNearMiss(): void {
     this.nearMissCooldown = 300;
+    this.nearMisses += 1;
     this.combo = Math.min(9, this.combo + 1);
     this.comboTimer = 1800;
     this.scoreBonus += GAME_CONFIG.nearMissScore * this.combo;
@@ -224,6 +232,7 @@ export class PlayScene extends Phaser.Scene {
     const data = SaveService.setBestScore(this.score);
     this.bestScore = data.bestScore;
     SaveService.addCoins(this.coins);
+    SaveService.recordRun(this.coins, this.nearMisses, this.score);
   }
 
   private showGameOverPanel(): void {
@@ -232,24 +241,23 @@ export class PlayScene extends Phaser.Scene {
     const overlay = this.add.rectangle(width / 2, height / 2, width, height, GAME_CONFIG.overlay, 0.78).setDepth(20);
     const title = this.add.text(width / 2, height * 0.25, 'RUN OVER', { fontFamily: 'Arial', fontSize: '38px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
     const result = this.add.text(width / 2, height * 0.34, `SCORE  ${this.score}\nRUN COINS  ${this.coins}\nBEST  ${this.bestScore}\nBANK  ${SaveService.load().coins}`, { fontFamily: 'Arial', fontSize: '19px', color: '#9fe8d1', align: 'center', lineSpacing: 6 }).setOrigin(0.5).setDepth(21);
-
     const buttonY = canRevive ? 0.59 : 0.55;
+    const panelItems: Phaser.GameObjects.GameObject[] = [overlay, title, result];
     if (canRevive) {
       const reviveButton = this.add.rectangle(width / 2, height * 0.49, 230, 54, GAME_CONFIG.shield).setDepth(21).setInteractive({ useHandCursor: true });
-      this.add.text(width / 2, height * 0.49, `REVIVE  •  ${GAME_CONFIG.reviveCost} COINS`, { fontFamily: 'Arial', fontSize: '15px', color: '#07111f', fontStyle: 'bold' }).setOrigin(0.5).setDepth(22);
+      const reviveText = this.add.text(width / 2, height * 0.49, `REVIVE  •  ${GAME_CONFIG.reviveCost} COINS`, { fontFamily: 'Arial', fontSize: '15px', color: '#07111f', fontStyle: 'bold' }).setOrigin(0.5).setDepth(22);
       reviveButton.on('pointerup', () => this.revive());
+      panelItems.push(reviveButton, reviveText);
     }
-
     const playAgain = this.add.rectangle(width / 2, height * buttonY, 190, 56, GAME_CONFIG.accent).setDepth(21).setInteractive({ useHandCursor: true });
-    this.add.text(width / 2, height * buttonY, 'PLAY AGAIN', { fontFamily: 'Arial', fontSize: '18px', color: '#07111f', fontStyle: 'bold' }).setOrigin(0.5).setDepth(22);
+    const playAgainText = this.add.text(width / 2, height * buttonY, 'PLAY AGAIN', { fontFamily: 'Arial', fontSize: '18px', color: '#07111f', fontStyle: 'bold' }).setOrigin(0.5).setDepth(22);
     playAgain.on('pointerup', () => this.restart());
-
     const home = this.add.text(width / 2, height * 0.70, 'HOME', { fontFamily: 'Arial', fontSize: '16px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(22).setInteractive({ useHandCursor: true });
     home.on('pointerup', () => this.scene.start('HomeScene'));
     const shop = this.add.text(width / 2, height * 0.76, 'SHOP', { fontFamily: 'Arial', fontSize: '16px', color: '#ffd166', fontStyle: 'bold' }).setOrigin(0.5).setDepth(22).setInteractive({ useHandCursor: true });
     shop.on('pointerup', () => this.scene.start('ShopScene'));
-
-    this.gameOverPanel = this.add.container(0, 0, [overlay, title, result, playAgain, home, shop]).setDepth(20);
+    panelItems.push(playAgain, playAgainText, home, shop);
+    this.gameOverPanel = this.add.container(0, 0, panelItems).setDepth(20);
   }
 
   private revive(): void {
@@ -272,36 +280,28 @@ export class PlayScene extends Phaser.Scene {
   private clearNearbyObstacles(): void {
     for (let i = this.obstacles.length - 1; i >= 0; i--) {
       const obstacle = this.obstacles[i];
-      if (Math.abs(obstacle.y - this.player.y) < 190) {
-        obstacle.destroy();
-        this.obstacles.splice(i, 1);
-      }
+      if (Math.abs(obstacle.y - this.player.y) < 190) { obstacle.destroy(); this.obstacles.splice(i, 1); }
     }
   }
 
   private restart(): void { this.scene.restart(); }
-
   private changeLane(direction: number): void {
-    if (this.isGameOver) return;
-    if (this.inputCooldown > 0) return;
+    if (this.isGameOver || this.inputCooldown > 0) return;
     const next = Phaser.Math.Clamp(this.targetLane + direction, 0, GAME_CONFIG.lanes - 1);
     if (next === this.targetLane) return;
     this.targetLane = next;
     this.inputCooldown = GAME_CONFIG.laneInputBufferMs;
     this.tweens.add({ targets: this.player, x: this.laneX[this.targetLane], duration: GAME_CONFIG.laneTweenMs, ease: 'Quad.easeOut' });
   }
-
   private getLanePositions(width: number): number[] {
     const left = (width - GAME_CONFIG.roadWidth) / 2;
     const laneWidth = GAME_CONFIG.roadWidth / GAME_CONFIG.lanes;
     return Array.from({ length: GAME_CONFIG.lanes }, (_, lane) => left + laneWidth * (lane + 0.5));
   }
-
   private safeLane(blocked: number[]): number {
-    const safe = Array.from({ length: GAME_CONFIG.lanes }, (_, lane) => lane).filter((lane) => !blocked.includes(lane));
+    const safe = Array.from({ length: GAME_CONFIG.lanes }, (_, lane) => lane).filter(lane => !blocked.includes(lane));
     return safe[Math.floor(Math.random() * safe.length)] ?? 0;
   }
-
   private updateHud(): void {
     this.distanceText.setText(`DIST ${Math.floor(this.distance)}m`);
     this.scoreText.setText(`SCORE ${this.score}`);
