@@ -47,16 +47,14 @@
 - Expanded Home navigation for Daily Reward, Missions, Leaderboard, Shop and Settings.
 - Save migration/fallback handling includes the leaderboard field.
 
-## Gameplay polish pass — Complete
-- Obstacle warning telegraph before an obstacle reaches the player.
-- Temporal obstacle validator keeps consecutive patterns reachable with at most one lane change.
-- Pause/resume button and keyboard shortcut.
-- Automatic pause when the browser/app becomes hidden, with resume/exit overlay.
-- Procedural Web Audio feedback and lightweight looping music; respects sound/music settings.
-- Device vibration hooks; respects vibration setting and safely no-ops where unsupported.
-- Magnet now visibly pulls coins toward the player.
-- Collision, pickup, near-miss, lane-change and revive feedback improved.
-- Offline PWA service worker and manifest added for installable/offline shell behavior.
+## Day 6 — Performance, polish and QA pass in progress
+- Added a reusable performance monitor with FPS/frame-time budget checks and unit tests.
+- Added GitHub Actions CI to run `npm test` and `npm run build` on pushes and pull requests to `main`.
+- Added a no-op AdService so the v1 build has an explicit ad integration boundary without adding an SDK or network dependency.
+- Added `CREDITS.md` documenting the procedural/vector and Web Audio approach.
+- Added `TESTING.md` covering gameplay, progression, interruption, mobile, performance and release checks.
+- Verified current obstacle validation includes temporal reachability and current config contains scoring/revive tuning fields.
+- Verified ShopScene uses the current SaveService skin purchase/equip API.
 
 ## Still to build before final deployment
 - True object pooling/performance pass and long-session profiling.
