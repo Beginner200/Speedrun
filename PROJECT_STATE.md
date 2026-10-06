@@ -59,29 +59,37 @@
 - Production CI test/build gate completed successfully on the latest Day 6 gameplay commit.
 - Production build is currently about 1.52 MB minified JS before gzip; Vite reports a chunk-size warning, which is a later optimization target rather than a build failure.
 
-## Day 7 — In Progress
-- Capacitor Android configuration added with application ID `com.jadebelvestre.dashdodge`.
-- Android build/sync scripts and Capacitor dependencies added to package configuration.
-- Privacy notice added for the offline/local-only release model.
-- Release checklist added for Android QA, signing, store assets and final deployment.
-- Google Play store-listing draft added.
+## Day 7 — Visual Upgrade In Progress
+- Added `src/config/palette.ts` as the single source for UI and biome colors.
+- Added an art-ready skin/biome system with eight cosmetic character slots and three biome definitions.
+- Selected Jungle Ruins as the third biome to provide a strong visual contrast without changing gameplay.
+- Added `assets/ASSET_MANIFEST.json` with standardized character dimensions/frame counts so art can be swapped without changing gameplay code.
+- Visual architecture is being added without changing obstacle hitboxes, scoring, saving, or offline/network rules.
+- Current character assets remain procedural placeholders while the production visual pipeline is implemented.
+- Preferred external 3D-model pipeline will only use assets whose license is explicitly verified; models will not ship in the app. If that cannot be completed safely, the project will use the procedural layered-character fallback.
+
+## Visual Upgrade Decisions
+- Art style: stylized semi-realistic, saturated, high-contrast, readable before decorative.
+- Biomes: Sunny City Streets, Neon Night, Jungle Ruins.
+- Biome transitions target about 2 seconds and are distance-driven.
+- Quality presets will be Low/Medium/High; Low keeps baked effects and reduced particles rather than dynamic lighting.
+- Character hitboxes and gameplay dimensions remain unchanged across skins/biomes.
+- Maximum texture atlas target is 2048x2048; total install budget is now 40 MB.
+- All assets must be CC0, openly licensed, or code-generated and must be recorded in `CREDITS.md` and `assets/ASSET_MANIFEST.json`.
+- No web font, CDN, analytics, account, gameplay server, or network dependency will be introduced.
+- Vercel deployment remains intentionally deferred until the visual upgrade and final QA are complete.
 
 ## Day 7 — Remaining
-- Generate the Android project with `npx cap add android` in an Android-capable development environment.
-- Add final adaptive icon and splash assets.
-- Set final Android version code/name and verify release configuration.
-- Build and test a signed AAB/APK on a physical Android device.
-- Complete touch, orientation, safe-area, interruption, battery/heat and long-session QA.
-- Create final screenshots, feature graphic and app icon.
-- Complete Google Play Data Safety and content-rating questionnaires.
-- Publish the privacy notice at a public URL before store submission.
-- Run final production CI and release review.
-- Deploy to Vercel only after final QA approval.
+- Build the eight animated characters with shared dimensions/anchors/frame counts.
+- Add contact shadows, speed trails, dust, biome backgrounds, themed obstacles and lane surfaces.
+- Add biome transition presentation and effects.
+- Restyle Home, Shop, Daily Reward, Game Over and HUD with the glossy UI direction.
+- Add Low/Medium/High quality controls and FPS auto-downgrade.
+- Add manifest validation and skin/biome automated tests.
+- Complete performance/readability/device QA.
+- Generate final Android release assets, screenshots and signed AAB after QA.
 
-## Decisions
-- Gameplay remains procedural/vector-based with no external asset licensing dependency.
-- All gameplay tuning lives in `src/config/gameConfig.ts`.
-- Save data is local-only behind SaveService; there are no gameplay network calls.
-- PWA offline shell is included; gameplay data remains local to the device.
-- Android package ID is `com.jadebelvestre.dashdodge`.
+## Existing Release State
+- Capacitor Android configuration uses application ID `com.jadebelvestre.dashdodge`.
+- A debug APK was successfully built in GitHub Actions and installed successfully on a real Android device.
 - Vercel deployment is intentionally paused/deferred until final feature completion and QA.
