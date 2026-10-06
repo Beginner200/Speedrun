@@ -4,6 +4,8 @@ import { buildTemporallySafePattern, ObstaclePattern } from '../core/obstacle';
 import { SaveService, getSelectedSkin } from '../core/saveService';
 import { AudioService } from '../core/audioService';
 import { HapticsService } from '../core/hapticsService';
+import { ObjectPool } from '../core/objectPool';
+import { addNearMiss, calculateScore, tickCombo } from '../core/scoring';
 
 type Obstacle = Phaser.GameObjects.Rectangle & { lane: number; wide?: boolean; warned?: boolean };
 type Pickup = Phaser.GameObjects.Arc & { kind: 'coin' | 'shield' | 'magnet'; lane: number; value: number };
@@ -15,6 +17,8 @@ export class PlayScene extends Phaser.Scene {
   private laneLines: Phaser.GameObjects.Rectangle[] = [];
   private obstacles: Obstacle[] = [];
   private pickups: Pickup[] = [];
+  private obstaclePool!: ObjectPool<Obstacle>;
+  private pickupPool!: ObjectPool<Pickup>;
   private speed = GAME_CONFIG.worldSpeed;
   private distance = 0;
   private score = 0;
@@ -35,6 +39,7 @@ export class PlayScene extends Phaser.Scene {
   private comboText!: Phaser.GameObjects.Text;
   private pauseButton!: Phaser.GameObjects.Text;
   private pausePanel: Phaser.GameObjects.Container | null = null;
+  private gameOverPanel!: Phaser.GameObjects.Container;
   private inputCooldown = 0;
   private spawnTimer = GAME_CONFIG.obstacleSpawnStartMs;
   private touchStartX: number | null = null;
@@ -74,6 +79,21 @@ export class PlayScene extends Phaser.Scene {
     this.pickups.length = 0;
     this.laneX = this.getLanePositions(width);
     this.cameras.main.setBackgroundColor(GAME_CONFIG.background);
+
+    this.obstaclePool = new ObjectPool(() => {
+      const obstacle = this.add.rectangle(0, -100, GAME_CONFIG.obstacleWidth, GAME_CONFIG.obstacleHeight, GAME_CONFIG.obstacle).setDepth(2).setVisible(false).setActive(false) as Obstacle;
+      obstacle.lane = 0;
+      obstacle.wide = false;
+      obstacle.warned = false;
+      return obstacle;
+    }, 8);
+    this.pickupPool = new ObjectPool(() => {
+      const pickup = this.add.circle(0, -100, 14, GAME_CONFIG.coin).setDepth(2).setVisible(false).setActive(false) as Pickup;
+      pickup.kind = 'coin';
+      pickup.lane = 0;
+      pickup.value = GAME_CONFIG.coinValue;
+      return pickup;
+    }, 8);
 
     this.add.rectangle(width / 2, height / 2, GAME_CONFIG.roadWidth, height, GAME_CONFIG.road).setDepth(0);
     this.laneLines.length = 0;
@@ -115,6 +135,7 @@ export class PlayScene extends Phaser.Scene {
     if (typeof document !== 'undefined') document.addEventListener('visibilitychange', this.handleVisibilityChange);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+      this.tweens.killAll();
       AudioService.stopMusic();
     });
   }
@@ -127,16 +148,18 @@ export class PlayScene extends Phaser.Scene {
     if (this.isGameOver || this.isPaused) return;
     const dt = Math.min(delta, 50) / 1000;
     this.inputCooldown = Math.max(0, this.inputCooldown - delta);
-    this.comboTimer = Math.max(0, this.comboTimer - delta);
+    const comboState = tickCombo({ combo: this.combo, timerMs: this.comboTimer, bonus: this.scoreBonus }, delta);
+    this.combo = comboState.combo;
+    this.comboTimer = comboState.timerMs;
+    this.scoreBonus = comboState.bonus;
     this.nearMissCooldown = Math.max(0, this.nearMissCooldown - delta);
     this.shieldTimer = Math.max(0, this.shieldTimer - delta);
     this.magnetTimer = Math.max(0, this.magnetTimer - delta);
     this.reviveInvulnerabilityTimer = Math.max(0, this.reviveInvulnerabilityTimer - delta);
-    if (this.comboTimer === 0) this.combo = 0;
 
     this.speed = Math.min(GAME_CONFIG.maxWorldSpeed, this.speed + GAME_CONFIG.speedRampPerSecond * dt);
     this.distance += this.speed * dt / 10;
-    this.score = Math.floor(this.distance * GAME_CONFIG.scorePerMeter) + this.scoreBonus + this.coins * GAME_CONFIG.coinScoreValue;
+    this.score = calculateScore(this.distance, GAME_CONFIG.scorePerMeter, this.scoreBonus, this.coins, GAME_CONFIG.coinScoreValue);
 
     for (const line of this.laneLines) {
       line.y += this.speed * dt;
@@ -159,7 +182,8 @@ export class PlayScene extends Phaser.Scene {
     this.lastPattern = pattern;
     const spawnY = -60;
     for (const lane of pattern.blockedLanes) {
-      const obstacle = this.add.rectangle(this.laneX[lane], spawnY, GAME_CONFIG.obstacleWidth, GAME_CONFIG.obstacleHeight, pattern.blockedLanes.length > 1 ? GAME_CONFIG.obstacleWide : GAME_CONFIG.obstacle).setDepth(2).setStrokeStyle(2, 0xffffff, 0.45) as Obstacle;
+      const obstacle = this.obstaclePool.acquire();
+      obstacle.setPosition(this.laneX[lane], spawnY).setSize(GAME_CONFIG.obstacleWidth, GAME_CONFIG.obstacleHeight).setFillStyle(pattern.blockedLanes.length > 1 ? GAME_CONFIG.obstacleWide : GAME_CONFIG.obstacle).setStrokeStyle(2, 0xffffff, 0.45).setAlpha(1).setVisible(true).setActive(true);
       obstacle.lane = lane;
       obstacle.wide = pattern.blockedLanes.length > 1;
       obstacle.warned = false;
@@ -171,16 +195,40 @@ export class PlayScene extends Phaser.Scene {
 
   private spawnCoinOnSafeLane(blocked: number[], y: number): void {
     const safe = this.safeLane(blocked);
-    const coin = this.add.circle(this.laneX[safe], y, 11, GAME_CONFIG.coin).setDepth(2).setStrokeStyle(2, 0xffffff, 0.75) as Pickup;
-    coin.kind = 'coin'; coin.lane = safe; coin.value = GAME_CONFIG.coinValue; this.pickups.push(coin);
+    const coin = this.pickupPool.acquire();
+    coin.setPosition(this.laneX[safe], y).setFillStyle(GAME_CONFIG.coin).setStrokeStyle(2, 0xffffff, 0.75).setAlpha(1).setScale(0.8).setVisible(true).setActive(true);
+    coin.kind = 'coin';
+    coin.lane = safe;
+    coin.value = GAME_CONFIG.coinValue;
+    this.pickups.push(coin);
   }
 
   private spawnPowerUp(blocked: number[], y: number): void {
     const safe = this.safeLane(blocked);
     const kind = Math.random() < 0.5 ? 'shield' : 'magnet';
     const color = kind === 'shield' ? GAME_CONFIG.shield : GAME_CONFIG.magnet;
-    const pickup = this.add.circle(this.laneX[safe], y, 14, color).setDepth(2).setStrokeStyle(3, 0xffffff, 0.9) as Pickup;
-    pickup.kind = kind; pickup.lane = safe; pickup.value = 1; this.pickups.push(pickup);
+    const pickup = this.pickupPool.acquire();
+    pickup.setPosition(this.laneX[safe], y).setFillStyle(color).setStrokeStyle(3, 0xffffff, 0.9).setAlpha(1).setScale(1).setVisible(true).setActive(true);
+    pickup.kind = kind;
+    pickup.lane = safe;
+    pickup.value = 1;
+    this.pickups.push(pickup);
+  }
+
+  private releaseObstacle(index: number): void {
+    const obstacle = this.obstacles[index];
+    this.tweens.killTweensOf(obstacle);
+    obstacle.setVisible(false).setActive(false).setAlpha(1);
+    this.obstacles.splice(index, 1);
+    this.obstaclePool.release(obstacle);
+  }
+
+  private releasePickup(index: number): void {
+    const pickup = this.pickups[index];
+    this.pickups.splice(index, 1);
+    this.tweens.killTweensOf(pickup);
+    pickup.setVisible(false).setActive(false).setAlpha(1).setScale(1);
+    this.pickupPool.release(pickup);
   }
 
   private moveObstacles(dt: number): void {
@@ -192,16 +240,18 @@ export class PlayScene extends Phaser.Scene {
         obstacle.warned = true;
         this.tweens.add({ targets: obstacle, alpha: 0.55, duration: 70, yoyo: true, repeat: 2 });
       }
-      if (obstacle.y > this.scale.height + 80) { obstacle.destroy(); this.obstacles.splice(i, 1); continue; }
+      if (obstacle.y > this.scale.height + 80) { this.releaseObstacle(i); continue; }
       if (this.reviveInvulnerabilityTimer <= 0 && this.isColliding(this.player, obstacle)) {
         if (this.shieldTimer > 0) {
           this.shieldTimer = 0;
           this.flashPlayer();
           AudioService.powerUp();
           HapticsService.impact();
-          obstacle.destroy(); this.obstacles.splice(i, 1); continue;
+          this.releaseObstacle(i);
+          continue;
         }
-        this.endRun(); return;
+        this.endRun();
+        return;
       }
       const near = Math.abs(this.player.x - obstacle.x) < 62 && Math.abs(this.player.y - obstacle.y) < 68;
       const passed = obstacle.y > this.player.y + 30;
@@ -219,26 +269,27 @@ export class PlayScene extends Phaser.Scene {
       }
       const dx = this.player.x - pickup.x;
       const dy = this.player.y - pickup.y;
-      const range = 28;
-      if (Math.abs(dx) < range && Math.abs(dy) < range) {
+      if (Math.abs(dx) < 28 && Math.abs(dy) < 28) {
         if (pickup.kind === 'magnet') this.magnetTimer = GAME_CONFIG.magnetDurationMs;
         else if (pickup.kind === 'shield') this.shieldTimer = GAME_CONFIG.shieldDurationMs;
         else this.coins += pickup.value;
         this.collectFeedback(pickup);
         if (pickup.kind === 'coin') { AudioService.coin(); HapticsService.success(); }
         else { AudioService.powerUp(); HapticsService.success(); }
-        pickup.destroy(); this.pickups.splice(i, 1); continue;
+        this.releasePickup(i);
+        continue;
       }
-      if (pickup.y > this.scale.height + 60) { pickup.destroy(); this.pickups.splice(i, 1); }
+      if (pickup.y > this.scale.height + 60) this.releasePickup(i);
     }
   }
 
   private addNearMiss(): void {
     this.nearMissCooldown = 300;
     this.nearMisses += 1;
-    this.combo = Math.min(9, this.combo + 1);
-    this.comboTimer = 1800;
-    this.scoreBonus += GAME_CONFIG.nearMissScore * this.combo;
+    const state = addNearMiss({ combo: this.combo, timerMs: this.comboTimer, bonus: this.scoreBonus }, GAME_CONFIG.nearMissScore);
+    this.combo = state.combo;
+    this.comboTimer = state.timerMs;
+    this.scoreBonus = state.bonus;
     AudioService.nearMiss();
     HapticsService.warning();
     const popup = this.add.text(this.player.x, this.player.y - 48, this.combo > 1 ? `NEAR MISS x${this.combo}` : 'NEAR MISS!', { fontFamily: 'Arial', fontSize: '16px', color: '#ffd166', fontStyle: 'bold' }).setOrigin(0.5).setDepth(15);
@@ -263,7 +314,7 @@ export class PlayScene extends Phaser.Scene {
   private endRun(): void {
     if (this.isGameOver) return;
     this.isGameOver = true;
-    this.score = Math.floor(this.distance * GAME_CONFIG.scorePerMeter) + this.scoreBonus + this.coins * GAME_CONFIG.coinScoreValue;
+    this.score = calculateScore(this.distance, GAME_CONFIG.scorePerMeter, this.scoreBonus, this.coins, GAME_CONFIG.coinScoreValue);
     this.settleRun();
     AudioService.hit();
     HapticsService.impact();
@@ -328,7 +379,7 @@ export class PlayScene extends Phaser.Scene {
   private clearNearbyObstacles(): void {
     for (let i = this.obstacles.length - 1; i >= 0; i--) {
       const obstacle = this.obstacles[i];
-      if (Math.abs(obstacle.y - this.player.y) < 190) { obstacle.destroy(); this.obstacles.splice(i, 1); }
+      if (Math.abs(obstacle.y - this.player.y) < 190) this.releaseObstacle(i);
     }
   }
 
@@ -340,9 +391,11 @@ export class PlayScene extends Phaser.Scene {
     this.isPaused = paused;
     this.touchStartX = null;
     if (paused) {
+      this.tweens.pauseAll();
       AudioService.stopMusic();
       this.showPausePanel();
     } else {
+      this.tweens.resumeAll();
       this.hidePausePanel();
       AudioService.unlock();
       AudioService.startMusic();
@@ -371,9 +424,9 @@ export class PlayScene extends Phaser.Scene {
 
   private changeLane(direction: number): void {
     if (this.isGameOver || this.isPaused || this.inputCooldown > 0) return;
-    AudioService.button();
     const next = Phaser.Math.Clamp(this.targetLane + direction, 0, GAME_CONFIG.lanes - 1);
     if (next === this.targetLane) return;
+    AudioService.button();
     this.targetLane = next;
     this.inputCooldown = GAME_CONFIG.laneInputBufferMs;
     HapticsService.pulse(12);
@@ -387,18 +440,30 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private safeLane(blocked: number[]): number {
-    const safe = Array.from({ length: GAME_CONFIG.lanes }, (_, lane) => lane).filter(lane => !blocked.includes(lane));
-    return safe[Math.floor(Math.random() * safe.length)] ?? 0;
+    let firstSafe = -1;
+    let count = 0;
+    for (let lane = 0; lane < GAME_CONFIG.lanes; lane++) {
+      if (blocked.indexOf(lane) !== -1) continue;
+      if (firstSafe < 0) firstSafe = lane;
+      count++;
+    }
+    if (count <= 1) return firstSafe >= 0 ? firstSafe : 0;
+    let pick = Math.floor(Math.random() * count);
+    for (let lane = 0; lane < GAME_CONFIG.lanes; lane++) {
+      if (blocked.indexOf(lane) !== -1) continue;
+      if (pick-- === 0) return lane;
+    }
+    return firstSafe >= 0 ? firstSafe : 0;
   }
 
   private updateHud(): void {
     this.distanceText.setText(`DIST ${Math.floor(this.distance)}m`);
     this.scoreText.setText(`SCORE ${this.score}`);
     this.speedText.setText(`SPEED ${(this.speed / GAME_CONFIG.worldSpeed).toFixed(1)}x`);
-    const powers: string[] = [];
-    if (this.shieldTimer > 0) powers.push(`SHIELD ${(this.shieldTimer / 1000).toFixed(1)}s`);
-    if (this.magnetTimer > 0) powers.push(`MAGNET ${(this.magnetTimer / 1000).toFixed(1)}s`);
-    this.powerText.setText(powers.join('  '));
+    let powerText = '';
+    if (this.shieldTimer > 0) powerText = `SHIELD ${(this.shieldTimer / 1000).toFixed(1)}s`;
+    if (this.magnetTimer > 0) powerText += powerText ? `  MAGNET ${(this.magnetTimer / 1000).toFixed(1)}s` : `MAGNET ${(this.magnetTimer / 1000).toFixed(1)}s`;
+    this.powerText.setText(powerText);
     this.comboText.setText(this.combo > 1 ? `COMBO x${this.combo}` : '');
   }
 }
