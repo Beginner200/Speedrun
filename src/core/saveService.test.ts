@@ -9,6 +9,7 @@ describe('SaveService', () => {
     expect(data.version).toBe(1);
     expect(data.coins).toBe(0);
     expect(data.ownedSkins).toEqual(expect.arrayContaining(['mint', 'sky']));
+    expect(data.leaderboard).toEqual([]);
   });
 
   it('persists coins and best score', () => {
@@ -32,5 +33,27 @@ describe('SaveService', () => {
     expect(second.purchased).toBe(false);
     expect(SaveService.load().coins).toBe(0);
     expect(SaveService.load().selectedSkin).toBe(SKINS[2].id);
+  });
+
+  it('records run stats, mission progress, and top scores', () => {
+    SaveService.ensureMissions('2026-10-06');
+    SaveService.recordRun(12, 4, 500);
+    const data = SaveService.load();
+    expect(data.stats).toMatchObject({ runs: 1, coinsCollected: 12, nearMisses: 4 });
+    expect(data.bestScore).toBe(500);
+    expect(data.leaderboard[0]).toMatchObject({ score: 500, date: '2026-10-06' });
+  });
+
+  it('blocks duplicate daily rewards and backwards dates', () => {
+    expect(SaveService.claimDailyReward('2026-10-06').ok).toBe(true);
+    expect(SaveService.claimDailyReward('2026-10-06').ok).toBe(false);
+    expect(SaveService.claimDailyReward('2026-10-05').ok).toBe(false);
+  });
+
+  it('unlocks the day 7 skin', () => {
+    const dates = ['2026-10-01', '2026-10-02', '2026-10-03', '2026-10-04', '2026-10-05', '2026-10-06', '2026-10-07'];
+    dates.forEach(date => expect(SaveService.claimDailyReward(date).ok).toBe(true));
+    expect(SaveService.load().ownedSkins).toContain('daily7');
+    expect(SaveService.load().dailyReward.day).toBe(7);
   });
 });
