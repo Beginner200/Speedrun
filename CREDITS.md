@@ -11,10 +11,12 @@ Dash Dodge is an original offline endless runner project.
 - Capacitor (planned Android wrapper)
 
 ## Art
-Current gameplay visuals use original procedural/vector-style shapes generated in code. No third-party image or music assets are required for the current build.
+- Character silhouettes, outfits, palette variants, contact shadow, and animation geometry are original procedural/vector-style graphics generated in code for Dash Dodge.
+- The visual system currently uses no third-party character models, textures, fonts, or image assets.
+- No external network requests are required to render the visual layer.
 
 ## Audio
 Gameplay sound effects and the simple looping music layer are generated with the Web Audio API at runtime.
 
-## Future assets
-Any future third-party assets must be reviewed for license compatibility before inclusion in a release build.
+## Licensing policy
+Future third-party assets must be CC0, public-domain, or otherwise permissively licensed for the intended commercial use. Each included asset must be recorded in `ASSET_MANIFEST.json` and this file with its source URL and license before release.
