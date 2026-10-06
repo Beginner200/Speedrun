@@ -105,6 +105,7 @@ export class PlayScene extends Phaser.Scene {
     }
 
     this.player = this.add.rectangle(this.laneX[this.targetLane], height * GAME_CONFIG.playerYRatio, 42, 58, selectedSkin.color).setDepth(3).setStrokeStyle(3, 0xffffff, 0.9);
+    this.scene.launch('VisualOverlayScene');
     this.distanceText = this.add.text(18, 18, 'DIST 0m', { fontFamily: 'Arial', fontSize: '20px', color: '#fff', fontStyle: 'bold' }).setDepth(10);
     this.scoreText = this.add.text(width - 18, 18, 'SCORE 0', { fontFamily: 'Arial', fontSize: '20px', color: '#fff', fontStyle: 'bold' }).setOrigin(1, 0).setDepth(10);
     this.speedText = this.add.text(18, 46, 'SPEED 1.0x', { fontFamily: 'Arial', fontSize: '15px', color: '#9fb4ca' }).setDepth(10);
