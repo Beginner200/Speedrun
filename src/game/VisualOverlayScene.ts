@@ -20,6 +20,10 @@ export class VisualOverlayScene extends Phaser.Scene {
   private runClock = 0;
   private lastX = 0;
   private activeSkin = '';
+  private leftArm?: Phaser.GameObjects.Rectangle;
+  private rightArm?: Phaser.GameObjects.Rectangle;
+  private leftLeg?: Phaser.GameObjects.Rectangle;
+  private rightLeg?: Phaser.GameObjects.Rectangle;
 
   constructor() { super('VisualOverlayScene'); }
 
@@ -66,9 +70,7 @@ export class VisualOverlayScene extends Phaser.Scene {
     const stride = Math.sin(phase) * 3.5;
     const bob = Math.abs(Math.sin(phase)) * 1.5;
     this.visual!.setY(y - bob);
-
-    const lean = Phaser.Math.Clamp(dx * 0.045, -0.18, 0.18);
-    this.visual!.setRotation(lean);
+    this.visual!.setRotation(Phaser.Math.Clamp(dx * 0.045, -0.18, 0.18));
     this.animateLimbs(phase, stride);
   }
 
@@ -77,7 +79,6 @@ export class VisualOverlayScene extends Phaser.Scene {
     this.shadow?.destroy();
     const colors = SKIN_COLORS[id] ?? SKIN_COLORS.mint;
     const root = this.add.container(0, 0).setDepth(8).setVisible(false);
-
     const glow = this.add.circle(0, 2, 27, colors.suit, 0.08);
     const legs = this.add.container(0, 15);
     const leftLeg = this.add.rectangle(-8, 7, 7, 24, colors.accent).setOrigin(0.5, 0.1);
@@ -85,24 +86,18 @@ export class VisualOverlayScene extends Phaser.Scene {
     const leftShoe = this.add.ellipse(-10, 29, 13, 6, 0x111827);
     const rightShoe = this.add.ellipse(10, 29, 13, 6, 0x111827);
     legs.add([leftLeg, rightLeg, leftShoe, rightShoe]);
-
-    const torso = this.add.roundedRectangle?.(0, 0, 29, 34, 9, colors.suit) ?? this.add.rectangle(0, 0, 29, 34, colors.suit);
-    torso.setOrigin(0.5, 0.35);
+    const torso = this.add.rectangle(0, 0, 29, 34, colors.suit).setOrigin(0.5, 0.35).setStrokeStyle(2, colors.accent, 0.9);
     const belt = this.add.rectangle(0, 9, 25, 4, colors.accent).setOrigin(0.5);
-
     const head = this.add.circle(0, -20, 10, colors.skin);
     const hair = this.add.arc(0, -22, 10, 195, 345, false, colors.hair).setStrokeStyle(4, colors.hair, 1);
     const visor = id === 'neon' || id === 'ice' ? this.add.rectangle(0, -19, 15, 4, colors.accent, 0.8) : null;
-
     const leftArm = this.add.rectangle(-17, -1, 6, 22, colors.suit).setOrigin(0.5, 0.1);
     const rightArm = this.add.rectangle(17, -1, 6, 22, colors.suit).setOrigin(0.5, 0.1);
     const badge = this.add.circle(0, -1, 3, colors.accent);
     root.add([glow, legs, torso, belt, head, hair, leftArm, rightArm, badge]);
     if (visor) root.add(visor);
-
-    const shadow = this.add.ellipse(0, 0, 42, 10, 0x000000, 0.28).setDepth(7).setVisible(false);
+    this.shadow = this.add.ellipse(0, 0, 42, 10, 0x000000, 0.28).setDepth(7).setVisible(false);
     this.visual = root;
-    this.shadow = shadow;
     this.activeSkin = id;
     this.runClock = 0;
     this.lastX = this.playerRef?.x ?? 0;
@@ -112,13 +107,8 @@ export class VisualOverlayScene extends Phaser.Scene {
     this.rightLeg = rightLeg;
   }
 
-  private leftArm!: Phaser.GameObjects.Rectangle;
-  private rightArm!: Phaser.GameObjects.Rectangle;
-  private leftLeg!: Phaser.GameObjects.Rectangle;
-  private rightLeg!: Phaser.GameObjects.Rectangle;
-
   private animateLimbs(phase: number, stride: number): void {
-    if (!this.leftArm || !this.rightArm) return;
+    if (!this.leftArm || !this.rightArm || !this.leftLeg || !this.rightLeg) return;
     const swing = Math.sin(phase) * 0.45;
     this.leftArm.rotation = -swing;
     this.rightArm.rotation = swing;
