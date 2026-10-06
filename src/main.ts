@@ -20,3 +20,7 @@ new Phaser.Game({
   scene: [HomeScene, PlayScene, ShopScene, DailyScene, MissionScene, LeaderboardScene, SettingsScene, TutorialScene],
   render: { antialias: true, roundPixels: true }
 });
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => undefined));
+}
