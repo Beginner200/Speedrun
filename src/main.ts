@@ -10,7 +10,7 @@ import { TutorialScene } from './game/TutorialScene';
 import { VisualOverlayScene } from './game/VisualOverlayScene';
 import './styles.css';
 
-new Phaser.Game({
+const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game',
   width: 390,
@@ -20,6 +20,10 @@ new Phaser.Game({
   input: { activePointers: 2 },
   scene: [HomeScene, PlayScene, ShopScene, DailyScene, MissionScene, LeaderboardScene, SettingsScene, TutorialScene, VisualOverlayScene],
   render: { antialias: true, roundPixels: true }
+});
+
+game.events.once(Phaser.Core.Events.READY, () => {
+  game.scene.launch('VisualOverlayScene');
 });
 
 if ('serviceWorker' in navigator) {
