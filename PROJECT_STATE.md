@@ -15,46 +15,56 @@
 - Player/obstacle collision detection.
 - Distance-based scoring and live score HUD.
 - Collision response with camera shake.
-- Game-over overlay showing score and best score for the current session.
-- Play Again button and `R` keyboard restart.
+- Game-over overlay and fast restart.
 - Unit tests for obstacle safety and Day 1 tuning.
 
 ## Day 3 — Complete
-- Progressive speed ramp remains capped at the configured maximum.
-- Coin pickups spawn on safe lanes and increase the run coin count.
-- Shield power-up grants 10 seconds of one-hit protection.
-- Magnet power-up grants 8 seconds of increased coin pickup range.
-- Power-up timers are shown in the HUD.
-- Near-miss detection awards bonus score and a visible popup.
-- Consecutive near misses build a combo up to x9; the combo expires after its timer.
-- Shield hits consume the shield instead of ending the run.
-- Collection feedback and camera/player feedback added.
+- Progressive speed ramp capped at the configured maximum.
+- Coin pickups on safe lanes.
+- Shield power-up: 10 seconds and one-hit protection.
+- Magnet power-up: 8 seconds of increased coin range.
+- Power-up timers in HUD.
+- Near-miss scoring, popup feedback, and combo up to x9.
+- Collection feedback and camera/player feedback.
 
-## Day 4 — In Progress
-- Versioned local-only SaveService added with safe fallback loading.
-- Persistent coins and best-score storage primitives added.
-- Eight cosmetic skins added: two free and six unlockable.
-- Purchase/equip validation added to the economy service.
-- Home scene added with Play, Shop, reset-progress, best-score and coin display.
-- Shop scene added with all eight skins and persistent equip/purchase state.
-- Main Phaser scene registry starts at Home.
-- SaveService unit tests added for defaults, persistence and purchase validation.
-- PlayScene now loads the selected skin and persistent best score.
-- Run coins are committed to the local bank exactly once when a run ends.
-- Best score is persisted when the run ends.
-- Near-miss bonuses now accumulate separately instead of being overwritten every frame.
-- One revive per run added, costing 50 persistent coins and granting brief invulnerability.
-- Revive clears nearby obstacles and resumes the same run.
-- Game-over screen now includes Play Again and Home navigation, with Shop available from Home.
+## Day 4 — Complete
+- Versioned local-only SaveService with safe fallback loading.
+- Persistent coins, best score and cosmetic skin economy.
+- Eight cosmetic skins: two free and six unlockable, plus the Day 7 reward skin.
+- Purchase/equip validation.
+- Home and Shop scenes.
+- One revive per run for 50 coins with brief invulnerability and nearby-obstacle clearing.
+- Run rewards are settled once.
+
+## Day 5 — Feature-complete pass
+- Seven-day Daily Reward with escalating coins and Day 7 exclusive skin.
+- Duplicate-claim and backwards-device-date protection.
+- Three rotating daily missions with progress, rewards, and reroll-after-claim.
+- Mission statistics are now updated from completed runs.
+- Personal top-10 local leaderboard with dates.
+- First-run interactive swipe tutorial with skip and timeout.
+- Settings for sound, music, vibration, reset progress, and an in-game privacy notice.
+- Expanded Home navigation for Daily Reward, Missions, Leaderboard, Shop and Settings.
+- Save migration/fallback handling includes the new leaderboard field.
+
+## Gameplay polish currently added
+- Obstacle warning telegraph before an obstacle reaches the player.
+- Near-miss tracking is persisted for mission progress.
+- Game-over panel keeps all revive controls inside the panel container.
+- Run statistics and leaderboard entry are written once at run settlement.
+
+## Still to build before final deployment
+- Pause/resume flow and interruption handling.
+- Procedural audio/music and haptic feedback hooks.
+- More polished particles, speed lines and UI animations.
+- Stronger temporal spawn validation so sequences remain comfortably avoidable.
+- Object pooling/performance pass.
+- Additional automated tests for spawn sequences, scoring/combo, missions, leaderboard, and save migration.
+- Android Capacitor wrapper, icon/splash, release configuration, and real-device QA.
+- Final store assets, release checklist, and final production deployment.
 
 ## Decisions
-- Gameplay remains entirely procedural/vector-based so the prototype has no external asset licensing dependency.
+- Gameplay remains procedural/vector-based with no external asset licensing dependency.
 - All gameplay tuning lives in `src/config/gameConfig.ts`.
-- The obstacle safety rule always leaves at least one open lane.
-- Save data is local-only and versioned behind one SaveService; there are no network calls.
-- A run's earned coins are awarded to the persistent bank once; a revive cannot award the same run coins twice.
-- Revive costs 50 coins and is limited to once per run.
-- Vercel deployment remains intentionally deferred until the planned feature work is finished.
-
-## Next
-Finish Day 4 QA/integration checks: verify the live game build, refine game-over Home/Shop navigation, and add targeted tests for revive and run-reward behavior before moving to Day 5.
+- Save data is local-only behind SaveService; there are no gameplay network calls.
+- Vercel deployment is intentionally paused/deferred while feature development continues; final deployment will happen only after the feature-complete build and QA pass.
