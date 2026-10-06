@@ -22,10 +22,6 @@ const game = new Phaser.Game({
   render: { antialias: true, roundPixels: true }
 });
 
-game.events.once(Phaser.Core.Events.READY, () => {
-  game.scene.launch('VisualOverlayScene');
-});
-
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => undefined));
 }
