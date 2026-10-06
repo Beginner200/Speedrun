@@ -11,7 +11,7 @@
 ## Day 2 — Complete
 - Procedural obstacle spawning with a safe-path validator.
 - One- and two-lane obstacle patterns; never intentionally blocks all three lanes.
-- Obstacles move toward the player and are tracked in the scene obstacle list for now.
+- Obstacles move toward the player.
 - Player/obstacle collision detection.
 - Distance-based scoring and live score HUD.
 - Collision response with camera shake.
@@ -36,7 +36,7 @@
 - One revive per run for 50 coins with brief invulnerability and nearby-obstacle clearing.
 - Run rewards are settled once.
 
-## Day 5 — Feature-complete pass
+## Day 5 — Complete
 - Seven-day Daily Reward with escalating coins and Day 7 exclusive skin.
 - Duplicate-claim and backwards-device-date protection.
 - Three rotating daily missions with progress, rewards, and reroll-after-claim.
@@ -47,22 +47,23 @@
 - Expanded Home navigation for Daily Reward, Missions, Leaderboard, Shop and Settings.
 - Save migration/fallback handling includes the leaderboard field.
 
-## Day 6 — Performance, polish and QA pass in progress
-- Added a reusable performance monitor with FPS/frame-time budget checks and unit tests.
-- Added GitHub Actions CI to run `npm test` and `npm run build` on pushes and pull requests to `main`.
-- Added a no-op AdService so the v1 build has an explicit ad integration boundary without adding an SDK or network dependency.
-- Added `CREDITS.md` documenting the procedural/vector and Web Audio approach.
-- Added `TESTING.md` covering gameplay, progression, interruption, mobile, performance and release checks.
-- Verified obstacle validation includes temporal reachability and the current game configuration contains scoring/revive tuning fields.
-- Verified ShopScene uses the current SaveService skin purchase/equip API.
-- Added focused performance-monitor tests for rolling samples, stable 60 FPS and sustained below-budget frames.
+## Day 6 — Complete
+- Reusable object pooling is integrated into live obstacle and pickup spawning/release paths.
+- Removed avoidable per-frame array creation from HUD power text and optimized safe-lane selection.
+- Extracted scoring/combo rules into a tested core module.
+- Added scoring/combo unit tests, bringing the current suite to 24 passing tests.
+- Pause now stops gameplay tweens as well as the logical update loop; resume restores them.
+- Automatic interruption pause remains enabled for hidden/background browser state.
+- Procedural Web Audio, looping music, haptics, obstacle warning telegraph, temporal spawn validation and magnet feedback are active.
+- Offline PWA service worker and manifest are included.
+- Production CI test/build gate completed successfully on the latest Day 6 gameplay commit.
+- Production build is currently about 1.52 MB minified JS before gzip; Vite reports a chunk-size warning, which is a later optimization target rather than a build failure.
 
 ## Still to build before final deployment
-- True object pooling/performance pass and long-session profiling.
-- More particles, speed lines and final UI animation polish.
-- Additional automated tests for scoring/combo, missions, leaderboard, save migration, and interruption behavior.
 - Android Capacitor wrapper, icon/splash, release configuration, and real-device QA.
-- Final store assets, release checklist, privacy HTML/Data Safety answers, and final production deployment.
+- Final long-session profiling on real phones, battery/heat checks and touch-latency testing.
+- Final store assets, release checklist, privacy HTML/Data Safety answers, and production deployment.
+- Optional further bundle splitting/code-splitting to reduce the single large JS chunk.
 
 ## Decisions
 - Gameplay remains procedural/vector-based with no external asset licensing dependency.
