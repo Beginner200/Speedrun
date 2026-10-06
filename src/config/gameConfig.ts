@@ -36,6 +36,6 @@ export const GAME_CONFIG = {
   accent: 0xffd166,
   danger: 0xff6b6b,
   overlay: 0x050a12
-} as const;
+};
 
 export type GameConfig = typeof GAME_CONFIG;
