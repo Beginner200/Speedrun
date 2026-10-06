@@ -1,7 +1,9 @@
 import Phaser from 'phaser';
 import { GAME_CONFIG } from '../config/gameConfig';
-import { buildSafePattern } from '../core/obstacle';
+import { buildTemporallySafePattern, ObstaclePattern } from '../core/obstacle';
 import { SaveService, getSelectedSkin } from '../core/saveService';
+import { AudioService } from '../core/audioService';
+import { HapticsService } from '../core/hapticsService';
 
 type Obstacle = Phaser.GameObjects.Rectangle & { lane: number; wide?: boolean; warned?: boolean };
 type Pickup = Phaser.GameObjects.Arc & { kind: 'coin' | 'shield' | 'magnet'; lane: number; value: number };
@@ -31,13 +33,16 @@ export class PlayScene extends Phaser.Scene {
   private speedText!: Phaser.GameObjects.Text;
   private powerText!: Phaser.GameObjects.Text;
   private comboText!: Phaser.GameObjects.Text;
-  private gameOverPanel!: Phaser.GameObjects.Container;
+  private pauseButton!: Phaser.GameObjects.Text;
+  private pausePanel: Phaser.GameObjects.Container | null = null;
   private inputCooldown = 0;
   private spawnTimer = GAME_CONFIG.obstacleSpawnStartMs;
   private touchStartX: number | null = null;
   private isGameOver = false;
+  private isPaused = false;
   private runSettled = false;
   private reviveUsed = false;
+  private lastPattern: ObstaclePattern | null = null;
 
   constructor() { super('PlayScene'); }
 
@@ -46,6 +51,7 @@ export class PlayScene extends Phaser.Scene {
     const save = SaveService.load();
     const selectedSkin = getSelectedSkin();
     this.isGameOver = false;
+    this.isPaused = false;
     this.runSettled = false;
     this.reviveUsed = false;
     this.speed = GAME_CONFIG.worldSpeed;
@@ -63,6 +69,7 @@ export class PlayScene extends Phaser.Scene {
     this.nearMissCooldown = 0;
     this.spawnTimer = GAME_CONFIG.obstacleSpawnStartMs;
     this.targetLane = 1;
+    this.lastPattern = null;
     this.obstacles.length = 0;
     this.pickups.length = 0;
     this.laneX = this.getLanePositions(width);
@@ -72,7 +79,9 @@ export class PlayScene extends Phaser.Scene {
     this.laneLines.length = 0;
     for (let i = 0; i < 2; i++) {
       const x = (this.laneX[i] + this.laneX[i + 1]) / 2;
-      for (let y = -40; y < height + 40; y += 70) this.laneLines.push(this.add.rectangle(x, y, 4, 38, GAME_CONFIG.laneLine).setDepth(1));
+      for (let y = -40; y < height + 40; y += 70) {
+        this.laneLines.push(this.add.rectangle(x, y, 4, 38, GAME_CONFIG.laneLine).setDepth(1));
+      }
     }
 
     this.player = this.add.rectangle(this.laneX[this.targetLane], height * GAME_CONFIG.playerYRatio, 42, 58, selectedSkin.color).setDepth(3).setStrokeStyle(3, 0xffffff, 0.9);
@@ -81,22 +90,41 @@ export class PlayScene extends Phaser.Scene {
     this.speedText = this.add.text(18, 46, 'SPEED 1.0x', { fontFamily: 'Arial', fontSize: '15px', color: '#9fb4ca' }).setDepth(10);
     this.powerText = this.add.text(width - 18, 48, '', { fontFamily: 'Arial', fontSize: '14px', color: '#ffffff', align: 'right' }).setOrigin(1, 0).setDepth(10);
     this.comboText = this.add.text(width / 2, 92, '', { fontFamily: 'Arial', fontSize: '19px', color: '#ffd166', fontStyle: 'bold' }).setOrigin(0.5).setDepth(11);
+    this.pauseButton = this.add.text(width / 2, 52, 'Ⅱ', { fontFamily: 'Arial', fontSize: '24px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(12).setInteractive({ useHandCursor: true });
+    this.pauseButton.on('pointerup', () => this.togglePause());
 
-    this.input.on('pointerdown', (p: Phaser.Input.Pointer) => { if (!this.isGameOver) this.touchStartX = p.x; });
+    this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
+      AudioService.unlock();
+      AudioService.startMusic();
+      if (!this.isGameOver && !this.isPaused) this.touchStartX = p.x;
+    });
     this.input.on('pointerup', (p: Phaser.Input.Pointer) => {
-      if (this.isGameOver || this.touchStartX === null) return;
-      const dx = p.x - this.touchStartX; this.touchStartX = null;
-      if (Math.abs(dx) > 22) this.changeLane(dx > 0 ? 1 : -1); else this.changeLane(p.x < width / 2 ? -1 : 1);
+      if (this.isGameOver || this.isPaused || this.touchStartX === null) return;
+      const dx = p.x - this.touchStartX;
+      this.touchStartX = null;
+      if (Math.abs(dx) > 22) this.changeLane(dx > 0 ? 1 : -1);
+      else this.changeLane(p.x < width / 2 ? -1 : 1);
     });
     this.input.keyboard?.on('keydown-LEFT', () => this.changeLane(-1));
     this.input.keyboard?.on('keydown-A', () => this.changeLane(-1));
     this.input.keyboard?.on('keydown-RIGHT', () => this.changeLane(1));
     this.input.keyboard?.on('keydown-D', () => this.changeLane(1));
+    this.input.keyboard?.on('keydown-P', () => this.togglePause());
     this.input.keyboard?.on('keydown-R', () => { if (this.isGameOver) this.restart(); });
+
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', this.handleVisibilityChange);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+      AudioService.stopMusic();
+    });
   }
 
+  private handleVisibilityChange = (): void => {
+    if (document.hidden && !this.isGameOver) this.setPaused(true);
+  };
+
   update(_: number, delta: number): void {
-    if (this.isGameOver) return;
+    if (this.isGameOver || this.isPaused) return;
     const dt = Math.min(delta, 50) / 1000;
     this.inputCooldown = Math.max(0, this.inputCooldown - delta);
     this.comboTimer = Math.max(0, this.comboTimer - delta);
@@ -127,7 +155,8 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private spawnObstaclePattern(): void {
-    const pattern = buildSafePattern(GAME_CONFIG.lanes);
+    const pattern = buildTemporallySafePattern(GAME_CONFIG.lanes, this.lastPattern, Math.random, this.targetLane);
+    this.lastPattern = pattern;
     const spawnY = -60;
     for (const lane of pattern.blockedLanes) {
       const obstacle = this.add.rectangle(this.laneX[lane], spawnY, GAME_CONFIG.obstacleWidth, GAME_CONFIG.obstacleHeight, pattern.blockedLanes.length > 1 ? GAME_CONFIG.obstacleWide : GAME_CONFIG.obstacle).setDepth(2).setStrokeStyle(2, 0xffffff, 0.45) as Obstacle;
@@ -165,7 +194,13 @@ export class PlayScene extends Phaser.Scene {
       }
       if (obstacle.y > this.scale.height + 80) { obstacle.destroy(); this.obstacles.splice(i, 1); continue; }
       if (this.reviveInvulnerabilityTimer <= 0 && this.isColliding(this.player, obstacle)) {
-        if (this.shieldTimer > 0) { this.shieldTimer = 0; this.flashPlayer(); obstacle.destroy(); this.obstacles.splice(i, 1); continue; }
+        if (this.shieldTimer > 0) {
+          this.shieldTimer = 0;
+          this.flashPlayer();
+          AudioService.powerUp();
+          HapticsService.impact();
+          obstacle.destroy(); this.obstacles.splice(i, 1); continue;
+        }
         this.endRun(); return;
       }
       const near = Math.abs(this.player.x - obstacle.x) < 62 && Math.abs(this.player.y - obstacle.y) < 68;
@@ -178,14 +213,20 @@ export class PlayScene extends Phaser.Scene {
     for (let i = this.pickups.length - 1; i >= 0; i--) {
       const pickup = this.pickups[i];
       pickup.y += this.speed * dt;
+      if (this.magnetTimer > 0 && pickup.kind === 'coin') {
+        const dx = this.player.x - pickup.x;
+        if (Math.abs(dx) < GAME_CONFIG.magnetRange) pickup.x += Phaser.Math.Clamp(dx * dt * 6, -this.speed * dt, this.speed * dt);
+      }
       const dx = this.player.x - pickup.x;
       const dy = this.player.y - pickup.y;
-      const range = this.magnetTimer > 0 && pickup.kind === 'coin' ? GAME_CONFIG.magnetRange : 28;
+      const range = 28;
       if (Math.abs(dx) < range && Math.abs(dy) < range) {
         if (pickup.kind === 'magnet') this.magnetTimer = GAME_CONFIG.magnetDurationMs;
         else if (pickup.kind === 'shield') this.shieldTimer = GAME_CONFIG.shieldDurationMs;
         else this.coins += pickup.value;
         this.collectFeedback(pickup);
+        if (pickup.kind === 'coin') { AudioService.coin(); HapticsService.success(); }
+        else { AudioService.powerUp(); HapticsService.success(); }
         pickup.destroy(); this.pickups.splice(i, 1); continue;
       }
       if (pickup.y > this.scale.height + 60) { pickup.destroy(); this.pickups.splice(i, 1); }
@@ -198,6 +239,8 @@ export class PlayScene extends Phaser.Scene {
     this.combo = Math.min(9, this.combo + 1);
     this.comboTimer = 1800;
     this.scoreBonus += GAME_CONFIG.nearMissScore * this.combo;
+    AudioService.nearMiss();
+    HapticsService.warning();
     const popup = this.add.text(this.player.x, this.player.y - 48, this.combo > 1 ? `NEAR MISS x${this.combo}` : 'NEAR MISS!', { fontFamily: 'Arial', fontSize: '16px', color: '#ffd166', fontStyle: 'bold' }).setOrigin(0.5).setDepth(15);
     this.tweens.add({ targets: popup, y: popup.y - 32, alpha: 0, duration: 500, onComplete: () => popup.destroy() });
   }
@@ -222,6 +265,8 @@ export class PlayScene extends Phaser.Scene {
     this.isGameOver = true;
     this.score = Math.floor(this.distance * GAME_CONFIG.scorePerMeter) + this.scoreBonus + this.coins * GAME_CONFIG.coinScoreValue;
     this.settleRun();
+    AudioService.hit();
+    HapticsService.impact();
     this.cameras.main.shake(180, 0.008);
     this.showGameOverPanel();
   }
@@ -265,6 +310,7 @@ export class PlayScene extends Phaser.Scene {
     if (!SaveService.spendCoins(GAME_CONFIG.reviveCost)) return;
     this.reviveUsed = true;
     this.isGameOver = false;
+    this.isPaused = false;
     this.reviveInvulnerabilityTimer = GAME_CONFIG.reviveInvulnerabilityMs;
     this.shieldTimer = 0;
     this.combo = 0;
@@ -275,6 +321,8 @@ export class PlayScene extends Phaser.Scene {
     this.gameOverPanel.destroy();
     this.player.setAlpha(1);
     this.flashPlayer();
+    AudioService.powerUp();
+    HapticsService.success();
   }
 
   private clearNearbyObstacles(): void {
@@ -284,24 +332,65 @@ export class PlayScene extends Phaser.Scene {
     }
   }
 
-  private restart(): void { this.scene.restart(); }
+  private togglePause(): void { this.setPaused(!this.isPaused); }
+
+  private setPaused(paused: boolean): void {
+    if (this.isGameOver) return;
+    if (paused === this.isPaused) return;
+    this.isPaused = paused;
+    this.touchStartX = null;
+    if (paused) {
+      AudioService.stopMusic();
+      this.showPausePanel();
+    } else {
+      this.hidePausePanel();
+      AudioService.unlock();
+      AudioService.startMusic();
+    }
+  }
+
+  private showPausePanel(): void {
+    if (this.pausePanel) return;
+    const { width, height } = this.scale;
+    const shade = this.add.rectangle(width / 2, height / 2, width, height, GAME_CONFIG.overlay, 0.72).setDepth(30);
+    const title = this.add.text(width / 2, height * 0.39, 'PAUSED', { fontFamily: 'Arial', fontSize: '38px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(31);
+    const resume = this.add.rectangle(width / 2, height * 0.51, 190, 54, GAME_CONFIG.accent).setDepth(31).setInteractive({ useHandCursor: true });
+    const resumeText = this.add.text(width / 2, height * 0.51, 'RESUME', { fontFamily: 'Arial', fontSize: '18px', color: '#07111f', fontStyle: 'bold' }).setOrigin(0.5).setDepth(32);
+    resume.on('pointerup', () => this.setPaused(false));
+    const home = this.add.text(width / 2, height * 0.61, 'EXIT TO HOME', { fontFamily: 'Arial', fontSize: '15px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(32).setInteractive({ useHandCursor: true });
+    home.on('pointerup', () => this.scene.start('HomeScene'));
+    this.pausePanel = this.add.container(0, 0, [shade, title, resume, resumeText, home]).setDepth(30);
+  }
+
+  private hidePausePanel(): void {
+    this.pausePanel?.destroy();
+    this.pausePanel = null;
+  }
+
+  private restart(): void { AudioService.stopMusic(); this.scene.restart(); }
+
   private changeLane(direction: number): void {
-    if (this.isGameOver || this.inputCooldown > 0) return;
+    if (this.isGameOver || this.isPaused || this.inputCooldown > 0) return;
+    AudioService.button();
     const next = Phaser.Math.Clamp(this.targetLane + direction, 0, GAME_CONFIG.lanes - 1);
     if (next === this.targetLane) return;
     this.targetLane = next;
     this.inputCooldown = GAME_CONFIG.laneInputBufferMs;
+    HapticsService.pulse(12);
     this.tweens.add({ targets: this.player, x: this.laneX[this.targetLane], duration: GAME_CONFIG.laneTweenMs, ease: 'Quad.easeOut' });
   }
+
   private getLanePositions(width: number): number[] {
     const left = (width - GAME_CONFIG.roadWidth) / 2;
     const laneWidth = GAME_CONFIG.roadWidth / GAME_CONFIG.lanes;
     return Array.from({ length: GAME_CONFIG.lanes }, (_, lane) => left + laneWidth * (lane + 0.5));
   }
+
   private safeLane(blocked: number[]): number {
     const safe = Array.from({ length: GAME_CONFIG.lanes }, (_, lane) => lane).filter(lane => !blocked.includes(lane));
     return safe[Math.floor(Math.random() * safe.length)] ?? 0;
   }
+
   private updateHud(): void {
     this.distanceText.setText(`DIST ${Math.floor(this.distance)}m`);
     this.scoreText.setText(`SCORE ${this.score}`);
