@@ -53,8 +53,9 @@
 - Added a no-op AdService so the v1 build has an explicit ad integration boundary without adding an SDK or network dependency.
 - Added `CREDITS.md` documenting the procedural/vector and Web Audio approach.
 - Added `TESTING.md` covering gameplay, progression, interruption, mobile, performance and release checks.
-- Verified current obstacle validation includes temporal reachability and current config contains scoring/revive tuning fields.
+- Verified obstacle validation includes temporal reachability and the current game configuration contains scoring/revive tuning fields.
 - Verified ShopScene uses the current SaveService skin purchase/equip API.
+- Added focused performance-monitor tests for rolling samples, stable 60 FPS and sustained below-budget frames.
 
 ## Still to build before final deployment
 - True object pooling/performance pass and long-session profiling.
