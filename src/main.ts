@@ -7,6 +7,7 @@ import { MissionScene } from './game/MissionScene';
 import { LeaderboardScene } from './game/LeaderboardScene';
 import { SettingsScene } from './game/SettingsScene';
 import { TutorialScene } from './game/TutorialScene';
+import { VisualOverlayScene } from './game/VisualOverlayScene';
 import './styles.css';
 
 new Phaser.Game({
@@ -17,7 +18,7 @@ new Phaser.Game({
   backgroundColor: '#07111f',
   scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH, width: 390, height: 844 },
   input: { activePointers: 2 },
-  scene: [HomeScene, PlayScene, ShopScene, DailyScene, MissionScene, LeaderboardScene, SettingsScene, TutorialScene],
+  scene: [HomeScene, PlayScene, ShopScene, DailyScene, MissionScene, LeaderboardScene, SettingsScene, TutorialScene, VisualOverlayScene],
   render: { antialias: true, roundPixels: true }
 });
 
