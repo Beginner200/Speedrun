@@ -64,9 +64,11 @@
 - Added an art-ready skin/biome system with eight cosmetic character slots and three biome definitions.
 - Selected Jungle Ruins as the third biome to provide a strong visual contrast without changing gameplay.
 - Added `assets/ASSET_MANIFEST.json` with standardized character dimensions/frame counts so art can be swapped without changing gameplay code.
+- Added a procedural character renderer overlay that replaces the visible rectangle player while preserving the original collision object and hitbox dimensions.
+- Implemented eight skin-specific color/outfit variants with distinct hair/skin/accent combinations.
+- Implemented a lightweight running animation with alternating arms/legs, body bob, lane-change lean, and a contact shadow.
+- Kept the renderer code-generated so there are currently no external character assets or license dependencies.
 - Visual architecture is being added without changing obstacle hitboxes, scoring, saving, or offline/network rules.
-- Current character assets remain procedural placeholders while the production visual pipeline is implemented.
-- Preferred external 3D-model pipeline will only use assets whose license is explicitly verified; models will not ship in the app. If that cannot be completed safely, the project will use the procedural layered-character fallback.
 
 ## Visual Upgrade Decisions
 - Art style: stylized semi-realistic, saturated, high-contrast, readable before decorative.
@@ -80,10 +82,10 @@
 - Vercel deployment remains intentionally deferred until the visual upgrade and final QA are complete.
 
 ## Day 7 — Remaining
-- Build the eight animated characters with shared dimensions/anchors/frame counts.
-- Add contact shadows, speed trails, dust, biome backgrounds, themed obstacles and lane surfaces.
+- Add contact-shadow polish, speed trails, dust, biome backgrounds, themed obstacles and lane surfaces.
 - Add biome transition presentation and effects.
 - Restyle Home, Shop, Daily Reward, Game Over and HUD with the glossy UI direction.
+- Add shield glow, pickup bursts, near-miss streaks and quality-aware particles.
 - Add Low/Medium/High quality controls and FPS auto-downgrade.
 - Add manifest validation and skin/biome automated tests.
 - Complete performance/readability/device QA.
