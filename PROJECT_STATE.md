@@ -40,31 +40,34 @@
 - Seven-day Daily Reward with escalating coins and Day 7 exclusive skin.
 - Duplicate-claim and backwards-device-date protection.
 - Three rotating daily missions with progress, rewards, and reroll-after-claim.
-- Mission statistics are now updated from completed runs.
+- Mission statistics are updated from completed runs.
 - Personal top-10 local leaderboard with dates.
 - First-run interactive swipe tutorial with skip and timeout.
 - Settings for sound, music, vibration, reset progress, and an in-game privacy notice.
 - Expanded Home navigation for Daily Reward, Missions, Leaderboard, Shop and Settings.
-- Save migration/fallback handling includes the new leaderboard field.
+- Save migration/fallback handling includes the leaderboard field.
 
-## Gameplay polish currently added
+## Gameplay polish pass — Complete
 - Obstacle warning telegraph before an obstacle reaches the player.
-- Near-miss tracking is persisted for mission progress.
-- Game-over panel keeps all revive controls inside the panel container.
-- Run statistics and leaderboard entry are written once at run settlement.
+- Temporal obstacle validator keeps consecutive patterns reachable with at most one lane change.
+- Pause/resume button and keyboard shortcut.
+- Automatic pause when the browser/app becomes hidden, with resume/exit overlay.
+- Procedural Web Audio feedback and lightweight looping music; respects sound/music settings.
+- Device vibration hooks; respects vibration setting and safely no-ops where unsupported.
+- Magnet now visibly pulls coins toward the player.
+- Collision, pickup, near-miss, lane-change and revive feedback improved.
+- Offline PWA service worker and manifest added for installable/offline shell behavior.
 
 ## Still to build before final deployment
-- Pause/resume flow and interruption handling.
-- Procedural audio/music and haptic feedback hooks.
-- More polished particles, speed lines and UI animations.
-- Stronger temporal spawn validation so sequences remain comfortably avoidable.
-- Object pooling/performance pass.
-- Additional automated tests for spawn sequences, scoring/combo, missions, leaderboard, and save migration.
+- True object pooling/performance pass and long-session profiling.
+- More particles, speed lines and final UI animation polish.
+- Additional automated tests for scoring/combo, missions, leaderboard, save migration, and interruption behavior.
 - Android Capacitor wrapper, icon/splash, release configuration, and real-device QA.
-- Final store assets, release checklist, and final production deployment.
+- Final store assets, release checklist, privacy HTML/Data Safety answers, and final production deployment.
 
 ## Decisions
 - Gameplay remains procedural/vector-based with no external asset licensing dependency.
 - All gameplay tuning lives in `src/config/gameConfig.ts`.
 - Save data is local-only behind SaveService; there are no gameplay network calls.
+- PWA offline shell is included; gameplay data remains local to the device.
 - Vercel deployment is intentionally paused/deferred while feature development continues; final deployment will happen only after the feature-complete build and QA pass.
