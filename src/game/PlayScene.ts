@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_CONFIG } from '../config/gameConfig';
 import { buildSafePattern } from '../core/obstacle';
+import { SaveService, getSelectedSkin } from '../core/saveService';
 
 type Obstacle = Phaser.GameObjects.Rectangle & { lane: number; wide?: boolean };
 type Pickup = Phaser.GameObjects.Arc & { kind: 'coin' | 'shield' | 'magnet'; lane: number; value: number };
@@ -15,12 +16,14 @@ export class PlayScene extends Phaser.Scene {
   private speed = GAME_CONFIG.worldSpeed;
   private distance = 0;
   private score = 0;
+  private scoreBonus = 0;
   private bestScore = 0;
   private coins = 0;
   private combo = 0;
   private comboTimer = 0;
   private shieldTimer = 0;
   private magnetTimer = 0;
+  private reviveInvulnerabilityTimer = 0;
   private nearMissCooldown = 0;
   private distanceText!: Phaser.GameObjects.Text;
   private scoreText!: Phaser.GameObjects.Text;
@@ -32,20 +35,29 @@ export class PlayScene extends Phaser.Scene {
   private spawnTimer = GAME_CONFIG.obstacleSpawnStartMs;
   private touchStartX: number | null = null;
   private isGameOver = false;
+  private runSettled = false;
+  private reviveUsed = false;
 
   constructor() { super('PlayScene'); }
 
   create(): void {
     const { width, height } = this.scale;
+    const save = SaveService.load();
+    const selectedSkin = getSelectedSkin();
     this.isGameOver = false;
+    this.runSettled = false;
+    this.reviveUsed = false;
     this.speed = GAME_CONFIG.worldSpeed;
     this.distance = 0;
     this.score = 0;
+    this.scoreBonus = 0;
+    this.bestScore = save.bestScore;
     this.coins = 0;
     this.combo = 0;
     this.comboTimer = 0;
     this.shieldTimer = 0;
     this.magnetTimer = 0;
+    this.reviveInvulnerabilityTimer = 0;
     this.nearMissCooldown = 0;
     this.spawnTimer = GAME_CONFIG.obstacleSpawnStartMs;
     this.targetLane = 1;
@@ -61,7 +73,7 @@ export class PlayScene extends Phaser.Scene {
       for (let y = -40; y < height + 40; y += 70) this.laneLines.push(this.add.rectangle(x, y, 4, 38, GAME_CONFIG.laneLine).setDepth(1));
     }
 
-    this.player = this.add.rectangle(this.laneX[this.targetLane], height * GAME_CONFIG.playerYRatio, 42, 58, GAME_CONFIG.player).setDepth(3).setStrokeStyle(3, 0xffffff, 0.9);
+    this.player = this.add.rectangle(this.laneX[this.targetLane], height * GAME_CONFIG.playerYRatio, 42, 58, selectedSkin.color).setDepth(3).setStrokeStyle(3, 0xffffff, 0.9);
     this.distanceText = this.add.text(18, 18, 'DIST 0m', { fontFamily: 'Arial', fontSize: '20px', color: '#fff', fontStyle: 'bold' }).setDepth(10);
     this.scoreText = this.add.text(width - 18, 18, 'SCORE 0', { fontFamily: 'Arial', fontSize: '20px', color: '#fff', fontStyle: 'bold' }).setOrigin(1, 0).setDepth(10);
     this.speedText = this.add.text(18, 46, 'SPEED 1.0x', { fontFamily: 'Arial', fontSize: '15px', color: '#9fb4ca' }).setDepth(10);
@@ -89,11 +101,12 @@ export class PlayScene extends Phaser.Scene {
     this.nearMissCooldown = Math.max(0, this.nearMissCooldown - delta);
     this.shieldTimer = Math.max(0, this.shieldTimer - delta);
     this.magnetTimer = Math.max(0, this.magnetTimer - delta);
+    this.reviveInvulnerabilityTimer = Math.max(0, this.reviveInvulnerabilityTimer - delta);
     if (this.comboTimer === 0) this.combo = 0;
 
     this.speed = Math.min(GAME_CONFIG.maxWorldSpeed, this.speed + GAME_CONFIG.speedRampPerSecond * dt);
     this.distance += this.speed * dt / 10;
-    this.score = Math.floor(this.distance * GAME_CONFIG.scorePerMeter) + this.combo * 5 + this.coins * 2;
+    this.score = Math.floor(this.distance * GAME_CONFIG.scorePerMeter) + this.scoreBonus + this.coins * GAME_CONFIG.coinScoreValue;
 
     for (const line of this.laneLines) {
       line.y += this.speed * dt;
@@ -116,8 +129,9 @@ export class PlayScene extends Phaser.Scene {
     const pattern = buildSafePattern(GAME_CONFIG.lanes);
     const spawnY = -60;
     for (const lane of pattern.blockedLanes) {
-      const obstacle = this.add.rectangle(this.laneX[lane], spawnY, GAME_CONFIG.obstacleWidth, GAME_CONFIG.obstacleHeight, GAME_CONFIG.obstacle).setDepth(2).setStrokeStyle(2, 0xffffff, 0.45) as Obstacle;
+      const obstacle = this.add.rectangle(this.laneX[lane], spawnY, GAME_CONFIG.obstacleWidth, GAME_CONFIG.obstacleHeight, pattern.blockedLanes.length > 1 ? GAME_CONFIG.obstacleWide : GAME_CONFIG.obstacle).setDepth(2).setStrokeStyle(2, 0xffffff, 0.45) as Obstacle;
       obstacle.lane = lane;
+      obstacle.wide = pattern.blockedLanes.length > 1;
       this.obstacles.push(obstacle);
     }
     if (Math.random() < 0.72) this.spawnCoinOnSafeLane(pattern.blockedLanes, spawnY - 95);
@@ -143,7 +157,7 @@ export class PlayScene extends Phaser.Scene {
       const obstacle = this.obstacles[i];
       obstacle.y += this.speed * dt;
       if (obstacle.y > this.scale.height + 80) { obstacle.destroy(); this.obstacles.splice(i, 1); continue; }
-      if (this.isColliding(this.player, obstacle)) {
+      if (this.reviveInvulnerabilityTimer <= 0 && this.isColliding(this.player, obstacle)) {
         if (this.shieldTimer > 0) { this.shieldTimer = 0; this.flashPlayer(); obstacle.destroy(); this.obstacles.splice(i, 1); continue; }
         this.endRun(); return;
       }
@@ -175,7 +189,7 @@ export class PlayScene extends Phaser.Scene {
     this.nearMissCooldown = 300;
     this.combo = Math.min(9, this.combo + 1);
     this.comboTimer = 1800;
-    this.score += 10 * this.combo;
+    this.scoreBonus += GAME_CONFIG.nearMissScore * this.combo;
     const popup = this.add.text(this.player.x, this.player.y - 48, this.combo > 1 ? `NEAR MISS x${this.combo}` : 'NEAR MISS!', { fontFamily: 'Arial', fontSize: '16px', color: '#ffd166', fontStyle: 'bold' }).setOrigin(0.5).setDepth(15);
     this.tweens.add({ targets: popup, y: popup.y - 32, alpha: 0, duration: 500, onComplete: () => popup.destroy() });
   }
@@ -198,16 +212,73 @@ export class PlayScene extends Phaser.Scene {
   private endRun(): void {
     if (this.isGameOver) return;
     this.isGameOver = true;
-    this.bestScore = Math.max(this.bestScore, this.score);
+    this.score = Math.floor(this.distance * GAME_CONFIG.scorePerMeter) + this.scoreBonus + this.coins * GAME_CONFIG.coinScoreValue;
+    this.settleRun();
     this.cameras.main.shake(180, 0.008);
+    this.showGameOverPanel();
+  }
+
+  private settleRun(): void {
+    if (this.runSettled) return;
+    this.runSettled = true;
+    const data = SaveService.setBestScore(this.score);
+    this.bestScore = data.bestScore;
+    SaveService.addCoins(this.coins);
+  }
+
+  private showGameOverPanel(): void {
     const { width, height } = this.scale;
+    const canRevive = !this.reviveUsed && SaveService.load().coins >= GAME_CONFIG.reviveCost;
     const overlay = this.add.rectangle(width / 2, height / 2, width, height, GAME_CONFIG.overlay, 0.78).setDepth(20);
-    const title = this.add.text(width / 2, height * 0.32, 'RUN OVER', { fontFamily: 'Arial', fontSize: '38px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
-    const result = this.add.text(width / 2, height * 0.41, `SCORE  ${this.score}\nCOINS  ${this.coins}\nBEST  ${this.bestScore}`, { fontFamily: 'Arial', fontSize: '21px', color: '#9fe8d1', align: 'center', lineSpacing: 7 }).setOrigin(0.5).setDepth(21);
-    const button = this.add.rectangle(width / 2, height * 0.58, 190, 62, GAME_CONFIG.accent).setDepth(21).setInteractive({ useHandCursor: true });
-    const label = this.add.text(width / 2, height * 0.58, 'PLAY AGAIN', { fontFamily: 'Arial', fontSize: '19px', color: '#07111f', fontStyle: 'bold' }).setOrigin(0.5).setDepth(22);
-    button.on('pointerup', () => this.restart());
-    this.gameOverPanel = this.add.container(0, 0, [overlay, title, result, button, label]).setDepth(20);
+    const title = this.add.text(width / 2, height * 0.25, 'RUN OVER', { fontFamily: 'Arial', fontSize: '38px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
+    const result = this.add.text(width / 2, height * 0.34, `SCORE  ${this.score}\nRUN COINS  ${this.coins}\nBEST  ${this.bestScore}\nBANK  ${SaveService.load().coins}`, { fontFamily: 'Arial', fontSize: '19px', color: '#9fe8d1', align: 'center', lineSpacing: 6 }).setOrigin(0.5).setDepth(21);
+
+    const buttonY = canRevive ? 0.51 : 0.55;
+    let reviveButton: Phaser.GameObjects.Rectangle | null = null;
+    let reviveLabel: Phaser.GameObjects.Text | null = null;
+    if (canRevive) {
+      reviveButton = this.add.rectangle(width / 2, height * 0.49, 230, 54, GAME_CONFIG.shield).setDepth(21).setInteractive({ useHandCursor: true });
+      reviveLabel = this.add.text(width / 2, height * 0.49, `REVIVE  •  ${GAME_CONFIG.reviveCost} COINS`, { fontFamily: 'Arial', fontSize: '15px', color: '#07111f', fontStyle: 'bold' }).setOrigin(0.5).setDepth(22);
+      reviveButton.on('pointerup', () => this.revive());
+    }
+
+    const playAgain = this.add.rectangle(width / 2, height * buttonY, 190, 56, GAME_CONFIG.accent).setDepth(21).setInteractive({ useHandCursor: true });
+    const playLabel = this.add.text(width / 2, height * buttonY, 'PLAY AGAIN', { fontFamily: 'Arial', fontSize: '18px', color: '#07111f', fontStyle: 'bold' }).setOrigin(0.5).setDepth(22);
+    playAgain.on('pointerup', () => this.restart());
+
+    const home = this.add.text(width / 2, height * (buttonY + 0.1), 'HOME  •  SHOP', { fontFamily: 'Arial', fontSize: '16px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(22).setInteractive({ useHandCursor: true });
+    home.on('pointerup', () => this.scene.start('HomeScene'));
+
+    const children: Phaser.GameObjects.GameObject[] = [overlay, title, result, playAgain, playLabel, home];
+    if (reviveButton && reviveLabel) children.push(reviveButton, reviveLabel);
+    this.gameOverPanel = this.add.container(0, 0, children).setDepth(20);
+  }
+
+  private revive(): void {
+    if (this.reviveUsed || !this.isGameOver) return;
+    if (!SaveService.spendCoins(GAME_CONFIG.reviveCost)) return;
+    this.reviveUsed = true;
+    this.isGameOver = false;
+    this.reviveInvulnerabilityTimer = GAME_CONFIG.reviveInvulnerabilityMs;
+    this.shieldTimer = 0;
+    this.combo = 0;
+    this.comboTimer = 0;
+    this.scoreBonus += 25;
+    this.spawnTimer = 900;
+    this.clearNearbyObstacles();
+    this.gameOverPanel.destroy();
+    this.player.setAlpha(1);
+    this.flashPlayer();
+  }
+
+  private clearNearbyObstacles(): void {
+    for (let i = this.obstacles.length - 1; i >= 0; i--) {
+      const obstacle = this.obstacles[i];
+      if (Math.abs(obstacle.y - this.player.y) < 190) {
+        obstacle.destroy();
+        this.obstacles.splice(i, 1);
+      }
+    }
   }
 
   private restart(): void { this.scene.restart(); }
@@ -219,6 +290,7 @@ export class PlayScene extends Phaser.Scene {
     const powers: string[] = [];
     if (this.shieldTimer > 0) powers.push(`SHIELD ${Math.ceil(this.shieldTimer / 1000)}s`);
     if (this.magnetTimer > 0) powers.push(`MAGNET ${Math.ceil(this.magnetTimer / 1000)}s`);
+    if (this.reviveInvulnerabilityTimer > 0) powers.push(`REVIVE ${Math.ceil(this.reviveInvulnerabilityTimer / 1000)}s`);
     this.powerText.setText(powers.join('  |  '));
     this.comboText.setText(this.combo > 0 ? `NEAR-MISS COMBO x${this.combo}` : '');
   }
