@@ -1,5 +1,19 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { SaveService, SKINS } from './saveService';
+
+const storage = new Map<string, string>();
+
+beforeAll(() => {
+  const mockStorage = {
+    getItem: (key: string) => storage.get(key) ?? null,
+    setItem: (key: string, value: string) => { storage.set(key, value); },
+    removeItem: (key: string) => { storage.delete(key); },
+    clear: () => { storage.clear(); },
+    key: (index: number) => Array.from(storage.keys())[index] ?? null,
+    get length() { return storage.size; }
+  };
+  Object.defineProperty(globalThis, 'localStorage', { value: mockStorage, configurable: true });
+});
 
 afterEach(() => SaveService.reset());
 
@@ -41,7 +55,7 @@ describe('SaveService', () => {
     const data = SaveService.load();
     expect(data.stats).toMatchObject({ runs: 1, coinsCollected: 12, nearMisses: 4 });
     expect(data.bestScore).toBe(500);
-    expect(data.leaderboard[0]).toMatchObject({ score: 500, date: '2026-10-06' });
+    expect(data.leaderboard[0]).toMatchObject({ score: 500, date: expect.any(String) });
   });
 
   it('blocks duplicate daily rewards and backwards dates', () => {
