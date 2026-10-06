@@ -59,15 +59,29 @@
 - Production CI test/build gate completed successfully on the latest Day 6 gameplay commit.
 - Production build is currently about 1.52 MB minified JS before gzip; Vite reports a chunk-size warning, which is a later optimization target rather than a build failure.
 
-## Still to build before final deployment
-- Android Capacitor wrapper, icon/splash, release configuration, and real-device QA.
-- Final long-session profiling on real phones, battery/heat checks and touch-latency testing.
-- Final store assets, release checklist, privacy HTML/Data Safety answers, and production deployment.
-- Optional further bundle splitting/code-splitting to reduce the single large JS chunk.
+## Day 7 — In Progress
+- Capacitor Android configuration added with application ID `com.jadebelvestre.dashdodge`.
+- Android build/sync scripts and Capacitor dependencies added to package configuration.
+- Privacy notice added for the offline/local-only release model.
+- Release checklist added for Android QA, signing, store assets and final deployment.
+- Google Play store-listing draft added.
+
+## Day 7 — Remaining
+- Generate the Android project with `npx cap add android` in an Android-capable development environment.
+- Add final adaptive icon and splash assets.
+- Set final Android version code/name and verify release configuration.
+- Build and test a signed AAB/APK on a physical Android device.
+- Complete touch, orientation, safe-area, interruption, battery/heat and long-session QA.
+- Create final screenshots, feature graphic and app icon.
+- Complete Google Play Data Safety and content-rating questionnaires.
+- Publish the privacy notice at a public URL before store submission.
+- Run final production CI and release review.
+- Deploy to Vercel only after final QA approval.
 
 ## Decisions
 - Gameplay remains procedural/vector-based with no external asset licensing dependency.
 - All gameplay tuning lives in `src/config/gameConfig.ts`.
 - Save data is local-only behind SaveService; there are no gameplay network calls.
 - PWA offline shell is included; gameplay data remains local to the device.
-- Vercel deployment is intentionally paused/deferred while feature development continues; final deployment will happen only after the feature-complete build and QA pass.
+- Android package ID is `com.jadebelvestre.dashdodge`.
+- Vercel deployment is intentionally paused/deferred until final feature completion and QA.
