@@ -1,0 +1,10 @@
+{
+  "name": "Dash Dodge",
+  "short_name": "Dash Dodge",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#07111f",
+  "theme_color": "#07111f",
+  "description": "A fast three-lane endless dodge runner."
+}
