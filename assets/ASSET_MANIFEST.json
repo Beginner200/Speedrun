@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "assets": [
+    {"key":"char-mint","file":"procedural","width":96,"height":128,"frames":12},
+    {"key":"char-sky","file":"procedural","width":96,"height":128,"frames":12},
+    {"key":"char-sunset","file":"procedural","width":96,"height":128,"frames":12},
+    {"key":"char-violet","file":"procedural","width":96,"height":128,"frames":12},
+    {"key":"char-gold","file":"procedural","width":96,"height":128,"frames":12},
+    {"key":"char-crimson","file":"procedural","width":96,"height":128,"frames":12},
+    {"key":"char-ice","file":"procedural","width":96,"height":128,"frames":12},
+    {"key":"char-neon","file":"procedural","width":96,"height":128,"frames":12}
+  ]
+}
