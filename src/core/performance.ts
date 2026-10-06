@@ -19,17 +19,23 @@ export class PerformanceMonitor {
 
   getAverageFps(): number {
     if (!this.samples.length) return 60;
-    return this.samples.reduce((sum, sample) => sum + sample.fps, 0) / this.samples.length;
+    let total = 0;
+    for (const sample of this.samples) total += sample.fps;
+    return total / this.samples.length;
   }
 
   getWorstFrameMs(): number {
     if (!this.samples.length) return 0;
-    return Math.max(...this.samples.map(sample => sample.frameMs));
+    let worst = 0;
+    for (const sample of this.samples) worst = Math.max(worst, sample.frameMs);
+    return worst;
   }
 
   isWithinBudget(targetFps = 60, minimumFps = 30): boolean {
     const fps = this.getAverageFps();
-    return fps >= minimumFps && this.getWorstFrameMs() <= 1000 / minimumFps;
+    const targetFrameMs = 1000 / Math.max(1, targetFps);
+    const minimumFrameMs = 1000 / Math.max(1, minimumFps);
+    return fps >= minimumFps && this.getWorstFrameMs() <= Math.max(targetFrameMs, minimumFrameMs);
   }
 
   reset(): void {
