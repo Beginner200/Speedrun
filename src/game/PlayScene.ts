@@ -13,7 +13,7 @@ export class PlayScene extends Phaser.Scene {
   private laneLines: Phaser.GameObjects.Rectangle[] = [];
   private obstacles: Obstacle[] = [];
   private pickups: Pickup[] = [];
-  private speed = GAME_CONFIG.worldSpeed;
+  private speed: number = GAME_CONFIG.worldSpeed;
   private distance = 0;
   private score = 0;
   private scoreBonus = 0;
@@ -32,7 +32,7 @@ export class PlayScene extends Phaser.Scene {
   private comboText!: Phaser.GameObjects.Text;
   private gameOverPanel!: Phaser.GameObjects.Container;
   private inputCooldown = 0;
-  private spawnTimer = GAME_CONFIG.obstacleSpawnStartMs;
+  private spawnTimer: number = GAME_CONFIG.obstacleSpawnStartMs;
   private touchStartX: number | null = null;
   private isGameOver = false;
   private runSettled = false;
@@ -233,25 +233,23 @@ export class PlayScene extends Phaser.Scene {
     const title = this.add.text(width / 2, height * 0.25, 'RUN OVER', { fontFamily: 'Arial', fontSize: '38px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
     const result = this.add.text(width / 2, height * 0.34, `SCORE  ${this.score}\nRUN COINS  ${this.coins}\nBEST  ${this.bestScore}\nBANK  ${SaveService.load().coins}`, { fontFamily: 'Arial', fontSize: '19px', color: '#9fe8d1', align: 'center', lineSpacing: 6 }).setOrigin(0.5).setDepth(21);
 
-    const buttonY = canRevive ? 0.51 : 0.55;
-    let reviveButton: Phaser.GameObjects.Rectangle | null = null;
-    let reviveLabel: Phaser.GameObjects.Text | null = null;
+    const buttonY = canRevive ? 0.59 : 0.55;
     if (canRevive) {
-      reviveButton = this.add.rectangle(width / 2, height * 0.49, 230, 54, GAME_CONFIG.shield).setDepth(21).setInteractive({ useHandCursor: true });
-      reviveLabel = this.add.text(width / 2, height * 0.49, `REVIVE  •  ${GAME_CONFIG.reviveCost} COINS`, { fontFamily: 'Arial', fontSize: '15px', color: '#07111f', fontStyle: 'bold' }).setOrigin(0.5).setDepth(22);
+      const reviveButton = this.add.rectangle(width / 2, height * 0.49, 230, 54, GAME_CONFIG.shield).setDepth(21).setInteractive({ useHandCursor: true });
+      this.add.text(width / 2, height * 0.49, `REVIVE  •  ${GAME_CONFIG.reviveCost} COINS`, { fontFamily: 'Arial', fontSize: '15px', color: '#07111f', fontStyle: 'bold' }).setOrigin(0.5).setDepth(22);
       reviveButton.on('pointerup', () => this.revive());
     }
 
     const playAgain = this.add.rectangle(width / 2, height * buttonY, 190, 56, GAME_CONFIG.accent).setDepth(21).setInteractive({ useHandCursor: true });
-    const playLabel = this.add.text(width / 2, height * buttonY, 'PLAY AGAIN', { fontFamily: 'Arial', fontSize: '18px', color: '#07111f', fontStyle: 'bold' }).setOrigin(0.5).setDepth(22);
+    this.add.text(width / 2, height * buttonY, 'PLAY AGAIN', { fontFamily: 'Arial', fontSize: '18px', color: '#07111f', fontStyle: 'bold' }).setOrigin(0.5).setDepth(22);
     playAgain.on('pointerup', () => this.restart());
 
-    const home = this.add.text(width / 2, height * (buttonY + 0.1), 'HOME  •  SHOP', { fontFamily: 'Arial', fontSize: '16px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(22).setInteractive({ useHandCursor: true });
+    const home = this.add.text(width / 2, height * 0.70, 'HOME', { fontFamily: 'Arial', fontSize: '16px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(22).setInteractive({ useHandCursor: true });
     home.on('pointerup', () => this.scene.start('HomeScene'));
+    const shop = this.add.text(width / 2, height * 0.76, 'SHOP', { fontFamily: 'Arial', fontSize: '16px', color: '#ffd166', fontStyle: 'bold' }).setOrigin(0.5).setDepth(22).setInteractive({ useHandCursor: true });
+    shop.on('pointerup', () => this.scene.start('ShopScene'));
 
-    const children: Phaser.GameObjects.GameObject[] = [overlay, title, result, playAgain, playLabel, home];
-    if (reviveButton && reviveLabel) children.push(reviveButton, reviveLabel);
-    this.gameOverPanel = this.add.container(0, 0, children).setDepth(20);
+    this.gameOverPanel = this.add.container(0, 0, [overlay, title, result, playAgain, home, shop]).setDepth(20);
   }
 
   private revive(): void {
@@ -283,34 +281,35 @@ export class PlayScene extends Phaser.Scene {
 
   private restart(): void { this.scene.restart(); }
 
-  private updateHud(): void {
-    this.distanceText.setText(`DIST ${Math.floor(this.distance)}m`);
-    this.scoreText.setText(`SCORE ${this.score}`);
-    this.speedText.setText(`SPEED ${(this.speed / GAME_CONFIG.worldSpeed).toFixed(1)}x  •  COINS ${this.coins}`);
-    const powers: string[] = [];
-    if (this.shieldTimer > 0) powers.push(`SHIELD ${Math.ceil(this.shieldTimer / 1000)}s`);
-    if (this.magnetTimer > 0) powers.push(`MAGNET ${Math.ceil(this.magnetTimer / 1000)}s`);
-    if (this.reviveInvulnerabilityTimer > 0) powers.push(`REVIVE ${Math.ceil(this.reviveInvulnerabilityTimer / 1000)}s`);
-    this.powerText.setText(powers.join('  |  '));
-    this.comboText.setText(this.combo > 0 ? `NEAR-MISS COMBO x${this.combo}` : '');
-  }
-
-  private safeLane(blocked: number[]): number {
-    for (let lane = 0; lane < GAME_CONFIG.lanes; lane++) if (!blocked.includes(lane)) return lane;
-    return 1;
-  }
-
-  private changeLane(direction: -1 | 1): void {
-    if (this.isGameOver || this.inputCooldown > 0) return;
+  private changeLane(direction: number): void {
+    if (this.isGameOver) return;
+    if (this.inputCooldown > 0) return;
     const next = Phaser.Math.Clamp(this.targetLane + direction, 0, GAME_CONFIG.lanes - 1);
     if (next === this.targetLane) return;
-    this.targetLane = next; this.inputCooldown = GAME_CONFIG.laneInputBufferMs;
-    this.tweens.add({ targets: this.player, x: this.laneX[next], duration: GAME_CONFIG.laneTweenMs, ease: 'Sine.easeOut' });
+    this.targetLane = next;
+    this.inputCooldown = GAME_CONFIG.laneInputBufferMs;
+    this.tweens.add({ targets: this.player, x: this.laneX[this.targetLane], duration: GAME_CONFIG.laneTweenMs, ease: 'Quad.easeOut' });
   }
 
   private getLanePositions(width: number): number[] {
     const left = (width - GAME_CONFIG.roadWidth) / 2;
     const laneWidth = GAME_CONFIG.roadWidth / GAME_CONFIG.lanes;
-    return Array.from({ length: GAME_CONFIG.lanes }, (_, i) => left + laneWidth * (i + 0.5));
+    return Array.from({ length: GAME_CONFIG.lanes }, (_, lane) => left + laneWidth * (lane + 0.5));
+  }
+
+  private safeLane(blocked: number[]): number {
+    const safe = Array.from({ length: GAME_CONFIG.lanes }, (_, lane) => lane).filter((lane) => !blocked.includes(lane));
+    return safe[Math.floor(Math.random() * safe.length)] ?? 0;
+  }
+
+  private updateHud(): void {
+    this.distanceText.setText(`DIST ${Math.floor(this.distance)}m`);
+    this.scoreText.setText(`SCORE ${this.score}`);
+    this.speedText.setText(`SPEED ${(this.speed / GAME_CONFIG.worldSpeed).toFixed(1)}x`);
+    const powers: string[] = [];
+    if (this.shieldTimer > 0) powers.push(`SHIELD ${(this.shieldTimer / 1000).toFixed(1)}s`);
+    if (this.magnetTimer > 0) powers.push(`MAGNET ${(this.magnetTimer / 1000).toFixed(1)}s`);
+    this.powerText.setText(powers.join('  '));
+    this.comboText.setText(this.combo > 1 ? `COMBO x${this.combo}` : '');
   }
 }
