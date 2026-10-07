@@ -60,9 +60,9 @@ export class EffectsScene extends Phaser.Scene {
   }
 
   nearMiss(x: number, y: number): void {
-    this.burst(x, y, PALETTE.ui.coin, this.quality === 'high' ? 9 : 5, 0.8);
+    this.burst(x, y, PALETTE.ui.accent, this.quality === 'high' ? 9 : 5, 0.8);
     const streak = this.acquire();
-    streak.setFillStyle(PALETTE.ui.coin).setPosition(x, y - 8).setSize(46, 4).setAlpha(0.9).setVisible(true).setActive(true);
+    streak.setFillStyle(PALETTE.ui.accent).setPosition(x, y - 8).setScale(11.5, 1).setAlpha(0.9).setVisible(true).setActive(true);
     this.tweens.add({ targets: streak, x: x + 55, alpha: 0, duration: 180, onComplete: () => this.release(streak) });
   }
 
@@ -74,7 +74,7 @@ export class EffectsScene extends Phaser.Scene {
 
   shieldHit(x: number, y: number): void {
     this.burst(x, y, PALETTE.ui.success, this.quality === 'high' ? 18 : 10, 1.0);
-    this.ring(x, y, PALETTE.ui.shield);
+    this.ring(x, y, PALETTE.ui.success);
   }
 
   private burst(x: number, y: number, color: number, count: number, scale: number): void {
@@ -139,7 +139,7 @@ export class EffectsScene extends Phaser.Scene {
     }
     const shield = Number(play.shieldTimer ?? 0) > 0;
     if (shield) {
-      if (!this.shieldBubble) this.shieldBubble = this.add.circle(this.playerX, this.playerY, 38, PALETTE.ui.shield, 0.08).setStrokeStyle(3, PALETTE.ui.shield, 0.75).setDepth(7);
+      if (!this.shieldBubble) this.shieldBubble = this.add.circle(this.playerX, this.playerY, 38, PALETTE.ui.success, 0.08).setStrokeStyle(3, PALETTE.ui.success, 0.75).setDepth(7);
       this.shieldBubble.setPosition(this.playerX, this.playerY).setAlpha(0.42 + Math.sin(Date.now() * 0.008) * 0.12);
     } else if (this.shieldBubble) {
       this.shieldBubble.destroy();
