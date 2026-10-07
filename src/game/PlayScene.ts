@@ -350,28 +350,29 @@ export class PlayScene extends Phaser.Scene {
   private showGameOverPanel(): void {
     const { width, height } = this.scale;
     const canRevive = !this.reviveUsed && SaveService.load().coins >= GAME_CONFIG.reviveCost;
-    const overlay = this.add.rectangle(width / 2, height / 2, width, height, GAME_CONFIG.overlay, 0.78).setDepth(20);
-    const title = this.add.text(width / 2, height * 0.25, 'RUN OVER', { fontFamily: 'Arial', fontSize: '38px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
-    const result = this.add.text(width / 2, height * 0.34, `SCORE  ${this.score}\nRUN COINS  ${this.coins}\nBEST  ${this.bestScore}\nBANK  ${SaveService.load().coins}`, { fontFamily: 'Arial', fontSize: '19px', color: '#9fe8d1', align: 'center', lineSpacing: 6 }).setOrigin(0.5).setDepth(21);
-    const buttonY = canRevive ? 0.59 : 0.55;
-    const panelItems: Phaser.GameObjects.GameObject[] = [overlay, title, result];
-    if (canRevive) {
-      const reviveButton = this.add.rectangle(width / 2, height * 0.49, 230, 54, GAME_CONFIG.shield).setDepth(21).setInteractive({ useHandCursor: true });
-      const reviveText = this.add.text(width / 2, height * 0.49, `REVIVE  •  ${GAME_CONFIG.reviveCost} COINS`, { fontFamily: 'Arial', fontSize: '15px', color: '#07111f', fontStyle: 'bold' }).setOrigin(0.5).setDepth(22);
-      reviveButton.on('pointerup', () => this.revive());
-      panelItems.push(reviveButton, reviveText);
+    const isNewBest = this.score >= this.bestScore;
+    const overlay = this.add.rectangle(width/2,height/2,width,height,0x020812,0.82).setDepth(20);
+    const panel = this.add.rectangle(width/2,height*.48,Math.min(width-34,330),height*.58,0x10233a,0.98).setStrokeStyle(3,isNewBest?0xffd166:0x36516f,.95).setDepth(20);
+    this.add.text(width/2,height*.23,isNewBest?'NEW BEST!':'RUN OVER',{fontFamily:'Arial',fontSize:isNewBest?'34px':'36px',color:isNewBest?'#ffd166':'#ffffff',fontStyle:'bold'}).setOrigin(.5).setDepth(21);
+    if(isNewBest)this.add.text(width/2,height*.285,'★  PERSONAL RECORD  ★',{fontFamily:'Arial',fontSize:'11px',color:'#5ee7c4',fontStyle:'bold',letterSpacing:2}).setOrigin(.5).setDepth(21);
+    const result=this.add.text(width/2,height*.37,'SCORE  '+this.score+'\nRUN COINS  '+this.coins+'\nBEST  '+this.bestScore+'\nBANK  '+SaveService.load().coins,{fontFamily:'Arial',fontSize:'18px',color:'#dbe7f3',align:'center',lineSpacing:7,fontStyle:'bold'}).setOrigin(.5).setDepth(21);
+    const targetScore=result; this.tweens.add({targets:targetScore,alpha:0.65,duration:180,yoyo:true});
+    const items:Phaser.GameObjects.GameObject[]=[overlay,panel,result];
+    if(canRevive){
+      const revive=this.add.rectangle(width/2,height*.56,230,48,0x48cfa8).setStrokeStyle(2,0xffffff,.2).setInteractive({useHandCursor:true}).setDepth(21);
+      const rt=this.add.text(width/2,height*.56,'↻  REVIVE  •  '+GAME_CONFIG.reviveCost,{fontFamily:'Arial',fontSize:'14px',color:'#07111f',fontStyle:'bold'}).setOrigin(.5).setDepth(22);
+      revive.on('pointerdown',()=>this.tweens.add({targets:[revive,rt],scaleX:.96,scaleY:.96,duration:60})); revive.on('pointerup',()=>this.revive()); items.push(revive,rt);
     }
-    const playAgain = this.add.rectangle(width / 2, height * buttonY, 190, 56, GAME_CONFIG.accent).setDepth(21).setInteractive({ useHandCursor: true });
-    const playAgainText = this.add.text(width / 2, height * buttonY, 'PLAY AGAIN', { fontFamily: 'Arial', fontSize: '18px', color: '#07111f', fontStyle: 'bold' }).setOrigin(0.5).setDepth(22);
-    playAgain.on('pointerup', () => this.restart());
-    const home = this.add.text(width / 2, height * 0.70, 'HOME', { fontFamily: 'Arial', fontSize: '16px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(22).setInteractive({ useHandCursor: true });
-    home.on('pointerup', () => this.scene.start('HomeScene'));
-    const shop = this.add.text(width / 2, height * 0.76, 'SHOP', { fontFamily: 'Arial', fontSize: '16px', color: '#ffd166', fontStyle: 'bold' }).setOrigin(0.5).setDepth(22).setInteractive({ useHandCursor: true });
-    shop.on('pointerup', () => this.scene.start('ShopScene'));
-    panelItems.push(playAgain, playAgainText, home, shop);
-    this.gameOverPanel = this.add.container(0, 0, panelItems).setDepth(20);
+    const playY=canRevive?.64:.59;
+    const play=this.add.rectangle(width/2,height*playY,210,52,0x5ee7c4).setStrokeStyle(2,0xffffff,.22).setInteractive({useHandCursor:true}).setDepth(21);
+    const pt=this.add.text(width/2,height*playY,'▶  PLAY AGAIN',{fontFamily:'Arial',fontSize:'17px',color:'#07111f',fontStyle:'bold'}).setOrigin(.5).setDepth(22);
+    play.on('pointerdown',()=>this.tweens.add({targets:[play,pt],scaleX:.96,scaleY:.96,duration:60})); play.on('pointerup',()=>this.restart()); items.push(play,pt);
+    const home=this.add.text(width/2,height*.73,'HOME',{fontFamily:'Arial',fontSize:'15px',color:'#ffffff',fontStyle:'bold'}).setOrigin(.5).setDepth(22).setInteractive({useHandCursor:true});
+    const shop=this.add.text(width/2,height*.78,'◈  SHOP',{fontFamily:'Arial',fontSize:'15px',color:'#ffd166',fontStyle:'bold'}).setOrigin(.5).setDepth(22).setInteractive({useHandCursor:true});
+    home.on('pointerup',()=>this.scene.start('HomeScene')); shop.on('pointerup',()=>this.scene.start('ShopScene')); items.push(home,shop);
+    this.gameOverPanel=this.add.container(0,0,items).setDepth(20);
+    this.tweens.add({targets:[panel],scaleX:1.02,scaleY:1.02,duration:180,yoyo:true,ease:'Sine.easeOut'});
   }
-
   private revive(): void {
     if (this.reviveUsed || !this.isGameOver) return;
     if (!SaveService.spendCoins(GAME_CONFIG.reviveCost)) return;
