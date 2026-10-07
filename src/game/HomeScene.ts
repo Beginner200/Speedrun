@@ -13,7 +13,7 @@ export class HomeScene extends Phaser.Scene {
     this.add.circle(width/2,height*.225,22,0xffffff,.22); this.add.rectangle(width/2,height*.27,34,42,0xffffff,.2).setStrokeStyle(2,0xffffff,.4);
     this.tweens.add({targets:hero,y:hero.y-4,duration:900,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
     this.add.text(width/2,height*.335,skin.name.toUpperCase(),{fontFamily:'Arial',fontSize:'11px',color:'#ffffff',fontStyle:'bold',letterSpacing:1}).setOrigin(.5);
-    this.add.text(width/2,height*.385,'BEST  '+save.bestScore+'     •     COINS  '+save.coins,{fontFamily:'Arial',fontSize:'14px',color:UI.gold,fontStyle:'bold'}).setOrigin(.5);
+    this.add.text(width/2,height*.385,'BEST  '+save.bestScore+'     •     COINS  '+save.coins,{fontFamily:'Arial',fontSize:'14px',color:'#ffd166',fontStyle:'bold'}).setOrigin(.5);
     button(this,width/2,height*.455,238,58,'▶  PLAY',UI.accent,'#07111f',()=>this.scene.start(save.tutorialSeen?'PlayScene':'TutorialScene'));
     button(this,width/2,height*.535,238,45,'🎁  DAILY REWARD',0x48cfa8,'#07111f',()=>this.scene.start('DailyScene'));
     button(this,width/2,height*.60,238,45,'◆  MISSIONS',0x7bdff2,'#07111f',()=>this.scene.start('MissionScene'));
