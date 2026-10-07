@@ -1,36 +1,25 @@
 import Phaser from 'phaser';
-import { GAME_CONFIG } from '../config/gameConfig';
 import { SaveService, SKINS } from '../core/saveService';
-
+import { card, homeButton, title, UI } from '../ui/uiStyle';
 export class ShopScene extends Phaser.Scene {
-  constructor() { super('ShopScene'); }
-
-  create(): void {
-    const { width, height } = this.scale;
-    this.cameras.main.setBackgroundColor(GAME_CONFIG.background);
-    this.add.text(18, 20, 'SHOP', { fontFamily: 'Arial', fontSize: '32px', color: '#ffffff', fontStyle: 'bold' });
-    this.add.text(width - 18, 28, `COINS ${SaveService.load().coins}`, { fontFamily: 'Arial', fontSize: '17px', color: '#ffd166', fontStyle: 'bold' }).setOrigin(1, 0);
-
-    this.add.text(width / 2, 68, 'COSMETIC SKINS', { fontFamily: 'Arial', fontSize: '14px', color: '#9fb4ca', letterSpacing: 1 }).setOrigin(0.5);
-    const startY = 125;
-    const rowH = 78;
-    SKINS.forEach((skin, index) => {
-      const y = startY + index * rowH;
-      const data = SaveService.load();
-      const owned = data.ownedSkins.includes(skin.id);
-      const selected = data.selectedSkin === skin.id;
-      const card = this.add.rectangle(width / 2, y, width - 36, 66, 0x142237).setStrokeStyle(2, selected ? GAME_CONFIG.accent : 0x2b4057, selected ? 1 : 0.7).setInteractive({ useHandCursor: true });
-      this.add.rectangle(42, y, 34, 44, skin.color).setStrokeStyle(2, 0xffffff, 0.75);
-      this.add.text(68, y - 15, skin.name, { fontFamily: 'Arial', fontSize: '17px', color: '#ffffff', fontStyle: 'bold' });
-      const action = selected ? 'EQUIPPED' : owned ? 'EQUIP' : `${skin.price} COINS`;
-      this.add.text(width - 28, y, action, { fontFamily: 'Arial', fontSize: '13px', color: selected ? '#ffd166' : '#dbe7f3', fontStyle: 'bold' }).setOrigin(1, 0.5);
-      card.on('pointerup', () => {
-        const result = SaveService.buyOrSelectSkin(skin.id);
-        if (result.ok) this.scene.restart();
-      });
+  constructor(){super('ShopScene');}
+  create():void{
+    const {width,height}=this.scale; this.cameras.main.setBackgroundColor(UI.bg); title(this,'SHOP',42);
+    this.add.text(width-18,48,'◉ '+SaveService.load().coins,{fontFamily:'Arial',fontSize:'18px',color:'#ffd166',fontStyle:'bold'}).setOrigin(1,.5);
+    this.add.text(width/2,74,'COSMETIC SKINS',{fontFamily:'Arial',fontSize:'12px',color:UI.muted,letterSpacing:2}).setOrigin(.5);
+    const preview=card(this,width/2,122,112,72,true); preview.setStrokeStyle(2,UI.gold,.8);
+    this.add.text(width/2,122,'★  COLLECTION',{fontFamily:'Arial',fontSize:'12px',color:'#ffffff',fontStyle:'bold'}).setOrigin(.5);
+    const startY=180,rowH=64;
+    SKINS.forEach((skin,index)=>{
+      const y=startY+index*rowH,data=SaveService.load(),owned=data.ownedSkins.includes(skin.id),selected=data.selectedSkin===skin.id;
+      const c=card(this,width/2,y,width-30,54,selected).setInteractive({useHandCursor:true});
+      this.add.rectangle(43,y,32,38,skin.color).setStrokeStyle(2,0xffffff,.7);
+      this.add.text(66,y-10,skin.name,{fontFamily:'Arial',fontSize:'15px',color:'#ffffff',fontStyle:'bold'});
+      this.add.text(66,y+11,owned?(selected?'EQUIPPED':'OWNED'):'LOCKED',{fontFamily:'Arial',fontSize:'10px',color:selected?'#5ee7c4':UI.muted,fontStyle:'bold'});
+      this.add.text(width-28,y,selected?'✓':owned?'EQUIP':'🔒 '+skin.price,{fontFamily:'Arial',fontSize:'12px',color:selected?'#5ee7c4':'#ffffff',fontStyle:'bold'}).setOrigin(1,.5);
+      c.on('pointerdown',()=>this.tweens.add({targets:c,scaleX:.98,scaleY:.98,duration:60}));
+      c.on('pointerup',()=>{this.tweens.add({targets:c,scaleX:1,scaleY:1,duration:80});const result=SaveService.buyOrSelectSkin(skin.id);if(result.ok)this.scene.restart();});
     });
-
-    const back = this.add.text(width / 2, height - 28, '‹ HOME', { fontFamily: 'Arial', fontSize: '17px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-    back.on('pointerup', () => this.scene.start('HomeScene'));
+    homeButton(this,()=>this.scene.start('HomeScene'));
   }
 }
