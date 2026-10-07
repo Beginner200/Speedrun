@@ -59,6 +59,13 @@
 - Production CI test/build gate completed successfully on the latest Day 6 gameplay commit.
 - Production build is currently about 1.52 MB minified JS before gzip; Vite reports a chunk-size warning, which is a later optimization target rather than a build failure.
 
+## Step 6 — Performance, Quality & QA
+- Added safer capped effect-particle recycling to prevent active-tween conflicts under heavy effects.
+- Kept effect particle pool bounded at 70 and speed-line pool bounded at 12.
+- Added/expanded manual QA coverage for biome readability, quality presets, FPS fallback, debug overlay, color-blind readability, and 30+ minute stability.
+- Bound PerformanceMonitor history without transient array growth.
+- Automated CI and Android verification remain the release gate.
+
 ## Day 7 — Visual Upgrade In Progress
 - Added `src/config/palette.ts` as the single source for UI and biome colors.
 - Added an art-ready skin/biome system with eight cosmetic character slots and three biome definitions.
