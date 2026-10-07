@@ -8,7 +8,7 @@ export type SaveData = {
   selectedSkin: string;
   ownedSkins: string[];
   tutorialSeen: boolean;
-  settings: { sound: boolean; music: boolean; vibration: boolean };
+  settings: { sound: boolean; music: boolean; vibration: boolean; quality: 'low' | 'medium' | 'high'; debugFps: boolean };
   dailyReward: { day: number; lastClaimDate: string };
   missions: { date: string; items: MissionProgress[] };
   stats: { runs: number; coinsCollected: number; nearMisses: number };
@@ -47,7 +47,7 @@ const DEFAULT_SAVE: SaveData = {
   selectedSkin: 'mint',
   ownedSkins: ['mint', 'sky'],
   tutorialSeen: false,
-  settings: { sound: true, music: true, vibration: true },
+  settings: { sound: true, music: true, vibration: true, quality: 'medium', debugFps: false },
   dailyReward: { day: 0, lastClaimDate: '' },
   missions: { date: '', items: [] },
   stats: { runs: 0, coinsCollected: 0, nearMisses: 0 },
@@ -71,10 +71,13 @@ export class SaveService {
       if (!raw) return cloneDefault();
       const parsed = JSON.parse(raw) as Partial<SaveData>;
       const owned = Array.isArray(parsed.ownedSkins) ? parsed.ownedSkins.filter((id): id is string => typeof id === 'string') : ['mint', 'sky'];
+      const requestedQuality = parsed.settings?.quality;
       const settings: SaveData['settings'] = {
         sound: parsed.settings?.sound !== false,
         music: parsed.settings?.music !== false,
-        vibration: parsed.settings?.vibration !== false
+        vibration: parsed.settings?.vibration !== false,
+        quality: requestedQuality === 'low' || requestedQuality === 'high' ? requestedQuality : 'medium',
+        debugFps: parsed.settings?.debugFps === true
       };
       const daily: SaveData['dailyReward'] = {
         day: Math.min(7, Math.max(0, Number(parsed.dailyReward?.day) || 0)),
