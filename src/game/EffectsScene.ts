@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { PALETTE } from '../config/palette';
+import { SaveService } from '../core/saveService';
 
 type FxParticle = Phaser.GameObjects.Arc | Phaser.GameObjects.Rectangle;
 
@@ -12,11 +13,15 @@ export class EffectsScene extends Phaser.Scene {
   private playerX = 0;
   private playerY = 0;
   private quality: 'low' | 'medium' | 'high' = 'medium';
+  private fpsWindowMs = 0;
+  private fpsFrames = 0;
+  private lowFpsSeconds = 0;
+  private fpsText?: Phaser.GameObjects.Text;
 
   constructor() { super('EffectsScene'); }
 
   create(): void {
-    this.quality = 'medium';
+    this.quality = SaveService.load().settings.quality;
     for (let i = 0; i < 70; i++) {
       const p = this.add.circle(0, 0, 4, 0xffffff).setVisible(false).setActive(false).setDepth(8);
       this.pool.push(p);
@@ -26,6 +31,7 @@ export class EffectsScene extends Phaser.Scene {
       this.speedLines.push(line);
     }
     this.events.on(Phaser.Scenes.Events.UPDATE, this.updateFx, this);
+    this.setQuality(this.quality);
   }
 
   setPlayer(player: Phaser.GameObjects.Rectangle): void {
@@ -119,6 +125,13 @@ export class EffectsScene extends Phaser.Scene {
   private updateFx(_time: number, delta: number): void {
     const play = this.scene.get('PlayScene') as unknown as { speed?: number; magnetTimer?: number; shieldTimer?: number; player?: Phaser.GameObjects.Rectangle } | undefined;
     if (!play || !this.scene.isActive('PlayScene')) return;
+    this.fpsWindowMs += delta; this.fpsFrames += 1;
+    if (this.fpsWindowMs >= 1000) {
+      const fps = this.fpsFrames * 1000 / this.fpsWindowMs;
+      if (fps < 40) this.lowFpsSeconds += this.fpsWindowMs / 1000; else this.lowFpsSeconds = Math.max(0, this.lowFpsSeconds - 0.5);
+      if (this.lowFpsSeconds >= 5 && this.quality !== 'low') { this.setQuality('low'); this.lowFpsSeconds = 0; }
+      this.fpsWindowMs = 0; this.fpsFrames = 0;
+    }
     if (play.player) this.setPlayer(play.player);
     if (!this.player) return;
     this.playerX = this.player.x;
