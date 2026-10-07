@@ -48,6 +48,8 @@ export class PlayScene extends Phaser.Scene {
   private runSettled = false;
   private reviveUsed = false;
   private lastPattern: ObstaclePattern | null = null;
+  private biomeDistance = -1;
+  private biomeBanner?: Phaser.GameObjects.Container;
 
   constructor() { super('PlayScene'); }
 
@@ -78,7 +80,7 @@ export class PlayScene extends Phaser.Scene {
     this.obstacles.length = 0;
     this.pickups.length = 0;
     this.laneX = this.getLanePositions(width);
-    this.cameras.main.setBackgroundColor(GAME_CONFIG.background);
+    this.cameras.main.setBackgroundColor(PALETTE.biomes.sunnyCity.sky);
 
     this.obstaclePool = new ObjectPool(() => {
       const obstacle = this.add.rectangle(0, -100, GAME_CONFIG.obstacleWidth, GAME_CONFIG.obstacleHeight, GAME_CONFIG.obstacle).setDepth(2).setVisible(false).setActive(false) as Obstacle;
@@ -95,12 +97,12 @@ export class PlayScene extends Phaser.Scene {
       return pickup;
     }, 8);
 
-    this.add.rectangle(width / 2, height / 2, GAME_CONFIG.roadWidth, height, GAME_CONFIG.road).setDepth(0);
+    this.add.rectangle(width / 2, height / 2, GAME_CONFIG.roadWidth, height, PALETTE.biomes.sunnyCity.lane).setDepth(0);
     this.laneLines.length = 0;
     for (let i = 0; i < 2; i++) {
       const x = (this.laneX[i] + this.laneX[i + 1]) / 2;
       for (let y = -40; y < height + 40; y += 70) {
-        this.laneLines.push(this.add.rectangle(x, y, 4, 38, GAME_CONFIG.laneLine).setDepth(1));
+        this.laneLines.push(this.add.rectangle(x, y, 4, 38, PALETTE.biomes.sunnyCity.divider).setDepth(1));
       }
     }
 
@@ -175,6 +177,7 @@ export class PlayScene extends Phaser.Scene {
     }
     this.moveObstacles(dt);
     this.movePickups(dt);
+    this.updateBiomeVisuals();
     this.updateHud();
   }
 
@@ -455,6 +458,35 @@ export class PlayScene extends Phaser.Scene {
       if (pick-- === 0) return lane;
     }
     return firstSafe >= 0 ? firstSafe : 0;
+  }
+
+  private updateBiomeVisuals(): void {
+    const biome = getBiome(this.distance);
+    if (biome.startDistance === this.biomeDistance) return;
+    const previous = this.biomeDistance;
+    this.biomeDistance = biome.startDistance;
+    const palette = PALETTE.biomes[biome.id];
+    this.cameras.main.setBackgroundColor(palette.sky);
+    const road = this.children.list.find((child) =>
+      child.type === 'Rectangle' &&
+      (child as Phaser.GameObjects.Rectangle).depth === 0
+    ) as Phaser.GameObjects.Rectangle | undefined;
+    road?.setFillStyle(palette.lane);
+    for (const line of this.laneLines) line.setFillStyle(palette.divider);
+    for (const obstacle of this.obstacles) obstacle.setFillStyle(obstacle.wide ? palette.obstacle : palette.obstacle);
+    for (const pickup of this.pickups) if (pickup.kind === 'coin') pickup.setFillStyle(palette.pickup);
+
+    if (previous >= 0) {
+      this.biomeBanner?.destroy();
+      const { width } = this.scale;
+      const box = this.add.rectangle(width / 2, 118, 245, 42, palette.mid, 0.9).setStrokeStyle(2, palette.divider, 0.8);
+      const label = this.add.text(width / 2, 118, biome.title.toUpperCase(), {
+        fontFamily: 'Arial', fontSize: '17px', color: '#ffffff', fontStyle: 'bold'
+      }).setOrigin(0.5);
+      this.biomeBanner = this.add.container(0, -60, [box, label]).setDepth(25);
+      this.tweens.add({ targets: this.biomeBanner, y: 0, duration: 220, ease: 'Back.easeOut' });
+      this.tweens.add({ targets: this.biomeBanner, y: -60, delay: 1450, duration: 330, ease: 'Quad.easeIn' });
+    }
   }
 
   private updateHud(): void {
