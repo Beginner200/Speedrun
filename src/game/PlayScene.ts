@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import { GAME_CONFIG } from '../config/gameConfig';
 import { buildTemporallySafePattern, ObstaclePattern } from '../core/obstacle';
 import { SaveService, getSelectedSkin } from '../core/saveService';
+import { PALETTE } from '../config/palette';
+import { getBiome } from '../core/visualSystem';
 import { AudioService } from '../core/audioService';
 import { HapticsService } from '../core/hapticsService';
 import { ObjectPool } from '../core/objectPool';
