@@ -27,8 +27,12 @@ export class SettingsScene extends Phaser.Scene {
         state.setColor(next ? '#9fe8d1' : '#9fb4ca');
       });
     });
-    this.add.text(width / 2, 350, 'Visual Quality', { fontFamily: 'Arial', fontSize: '18px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);\n    const quality = this.add.text(width / 2, 382, save.settings.quality.toUpperCase(), { fontFamily: 'Arial', fontSize: '15px', color: '#5ee7c4', fontStyle: 'bold' }).setOrigin(0.5).setInteractive({ useHandCursor: true });\n    quality.on('pointerup', () => { const order: Array<'low'|'medium'|'high'> = ['low','medium','high']; const next = order[(order.indexOf(SaveService.load().settings.quality) + 1) % order.length]; SaveService.setSetting('quality', next); quality.setText(next.toUpperCase()); });\n    this.add.text(width / 2, 430, 'Privacy', { fontFamily: 'Arial', fontSize: '18px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
-    this.add.text(width / 2, 464, 'Dash Dodge works offline. Game progress and scores\nstay on this device. No account is required.', { fontFamily: 'Arial', fontSize: '13px', color: '#9fb4ca', align: 'center', lineSpacing: 5 }).setOrigin(0.5);
+    this.add.text(width / 2, 350, 'Visual Quality', { fontFamily: 'Arial', fontSize: '18px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
+    const quality = this.add.text(width / 2, 382, save.settings.quality.toUpperCase(), { fontFamily: 'Arial', fontSize: '15px', color: '#5ee7c4', fontStyle: 'bold' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    quality.on('pointerup', () => { const order: Array<'low'|'medium'|'high'> = ['low','medium','high']; const next = order[(order.indexOf(SaveService.load().settings.quality) + 1) % order.length]; SaveService.setSetting('quality', next); quality.setText(next.toUpperCase()); });
+    this.add.text(width / 2, 430, 'Privacy', { fontFamily: 'Arial', fontSize: '18px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
+    this.add.text(width / 2, 464, 'Dash Dodge works offline. Game progress and scores
+stay on this device. No account is required.', { fontFamily: 'Arial', fontSize: '13px', color: '#9fb4ca', align: 'center', lineSpacing: 5 }).setOrigin(0.5);
     const privacy = this.add.text(width / 2, 525, 'VIEW PRIVACY NOTICE', { fontFamily: 'Arial', fontSize: '14px', color: '#ffd166', fontStyle: 'bold' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     privacy.on('pointerup', () => this.showPrivacyNotice());
     const reset = this.add.rectangle(width / 2, 610, 220, 54, GAME_CONFIG.danger).setInteractive({ useHandCursor: true });
@@ -42,7 +46,15 @@ export class SettingsScene extends Phaser.Scene {
     const overlay = this.add.rectangle(width / 2, height / 2, width, height, GAME_CONFIG.overlay, 0.94).setDepth(30);
     const panel = this.add.rectangle(width / 2, height / 2, width - 38, 470, 0x142237).setDepth(31).setStrokeStyle(2, GAME_CONFIG.accent, 0.8);
     const title = this.add.text(width / 2, height * 0.27, 'PRIVACY NOTICE', { fontFamily: 'Arial', fontSize: '24px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(32);
-    const body = this.add.text(width / 2, height * 0.47, 'Dash Dodge is designed to work offline.\n\nYour coins, scores, settings, missions and\nother progress are saved locally on your device.\n\nThe game does not require an account and\ndoes not send gameplay data to a server.\n\nReset Progress removes the local game save.', { fontFamily: 'Arial', fontSize: '14px', color: '#dbe7f3', align: 'center', lineSpacing: 8, wordWrap: { width: width - 70 } }).setOrigin(0.5).setDepth(32);
+    const body = this.add.text(width / 2, height * 0.47, 'Dash Dodge is designed to work offline.
+
+Your coins, scores, settings, missions and
+other progress are saved locally on your device.
+
+The game does not require an account and
+does not send gameplay data to a server.
+
+Reset Progress removes the local game save.', { fontFamily: 'Arial', fontSize: '14px', color: '#dbe7f3', align: 'center', lineSpacing: 8, wordWrap: { width: width - 70 } }).setOrigin(0.5).setDepth(32);
     const close = this.add.text(width / 2, height * 0.70, 'CLOSE', { fontFamily: 'Arial', fontSize: '16px', color: '#07111f', fontStyle: 'bold', backgroundColor: '#ffd166', padding: { left: 28, right: 28, top: 12, bottom: 12 } }).setOrigin(0.5).setDepth(32).setInteractive({ useHandCursor: true });
     close.on('pointerup', () => [overlay, panel, title, body, close].forEach(item => item.destroy()));
   }
