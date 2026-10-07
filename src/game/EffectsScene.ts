@@ -44,7 +44,7 @@ export class EffectsScene extends Phaser.Scene {
   }
 
   coinPickup(x: number, y: number): void {
-    this.burst(x, y, PALETTE.ui.coin, this.quality === 'high' ? 10 : 7, 0.9);
+    this.burst(x, y, PALETTE.ui.accent, this.quality === 'high' ? 10 : 7, 0.9);
   }
 
   powerPickup(x: number, y: number, color: number): void {
@@ -55,7 +55,7 @@ export class EffectsScene extends Phaser.Scene {
   magnetPull(x: number, y: number, tx: number, ty: number): void {
     if (this.quality === 'low') return;
     const streak = this.acquire();
-    streak.setFillStyle(PALETTE.ui.magnet).setPosition(x, y).setScale(0.6, 0.25).setAlpha(0.8).setVisible(true).setActive(true);
+    streak.setFillStyle(PALETTE.ui.success).setPosition(x, y).setScale(0.6, 0.25).setAlpha(0.8).setVisible(true).setActive(true);
     this.tweens.add({ targets: streak, x: tx, y: ty, alpha: 0, duration: 140, onComplete: () => this.release(streak) });
   }
 
@@ -73,7 +73,7 @@ export class EffectsScene extends Phaser.Scene {
   }
 
   shieldHit(x: number, y: number): void {
-    this.burst(x, y, PALETTE.ui.shield, this.quality === 'high' ? 18 : 10, 1.0);
+    this.burst(x, y, PALETTE.ui.success, this.quality === 'high' ? 18 : 10, 1.0);
     this.ring(x, y, PALETTE.ui.shield);
   }
 
@@ -117,7 +117,7 @@ export class EffectsScene extends Phaser.Scene {
   }
 
   private updateFx(_time: number, delta: number): void {
-    const play = this.scene.get('PlayScene') as unknown as { speed?: number; magnetTimer?: number; player?: Phaser.GameObjects.Rectangle } | undefined;
+    const play = this.scene.get('PlayScene') as unknown as { speed?: number; magnetTimer?: number; shieldTimer?: number; player?: Phaser.GameObjects.Rectangle } | undefined;
     if (!play || !this.scene.isActive('PlayScene')) return;
     if (play.player) this.setPlayer(play.player);
     if (!this.player) return;
