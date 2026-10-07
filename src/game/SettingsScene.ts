@@ -27,12 +27,12 @@ export class SettingsScene extends Phaser.Scene {
         state.setColor(next ? '#9fe8d1' : '#9fb4ca');
       });
     });
-    this.add.text(width / 2, 350, 'Privacy', { fontFamily: 'Arial', fontSize: '18px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
-    this.add.text(width / 2, 384, 'Dash Dodge works offline. Game progress and scores\nstay on this device. No account is required.', { fontFamily: 'Arial', fontSize: '13px', color: '#9fb4ca', align: 'center', lineSpacing: 5 }).setOrigin(0.5);
-    const privacy = this.add.text(width / 2, 445, 'VIEW PRIVACY NOTICE', { fontFamily: 'Arial', fontSize: '14px', color: '#ffd166', fontStyle: 'bold' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    this.add.text(width / 2, 350, 'Visual Quality', { fontFamily: 'Arial', fontSize: '18px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);\n    const quality = this.add.text(width / 2, 382, save.settings.quality.toUpperCase(), { fontFamily: 'Arial', fontSize: '15px', color: '#5ee7c4', fontStyle: 'bold' }).setOrigin(0.5).setInteractive({ useHandCursor: true });\n    quality.on('pointerup', () => { const order: Array<'low'|'medium'|'high'> = ['low','medium','high']; const next = order[(order.indexOf(SaveService.load().settings.quality) + 1) % order.length]; SaveService.setSetting('quality', next); quality.setText(next.toUpperCase()); });\n    this.add.text(width / 2, 430, 'Privacy', { fontFamily: 'Arial', fontSize: '18px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
+    this.add.text(width / 2, 464, 'Dash Dodge works offline. Game progress and scores\nstay on this device. No account is required.', { fontFamily: 'Arial', fontSize: '13px', color: '#9fb4ca', align: 'center', lineSpacing: 5 }).setOrigin(0.5);
+    const privacy = this.add.text(width / 2, 525, 'VIEW PRIVACY NOTICE', { fontFamily: 'Arial', fontSize: '14px', color: '#ffd166', fontStyle: 'bold' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     privacy.on('pointerup', () => this.showPrivacyNotice());
-    const reset = this.add.rectangle(width / 2, 540, 220, 54, GAME_CONFIG.danger).setInteractive({ useHandCursor: true });
-    this.add.text(width / 2, 540, 'RESET PROGRESS', { fontFamily: 'Arial', fontSize: '15px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
+    const reset = this.add.rectangle(width / 2, 610, 220, 54, GAME_CONFIG.danger).setInteractive({ useHandCursor: true });
+    this.add.text(width / 2, 610, 'RESET PROGRESS', { fontFamily: 'Arial', fontSize: '15px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
     reset.on('pointerup', () => { SaveService.reset(); this.scene.start('HomeScene'); });
     this.add.text(width / 2, height - 25, '‹ HOME', { fontFamily: 'Arial', fontSize: '16px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerup', () => this.scene.start('HomeScene'));
   }
