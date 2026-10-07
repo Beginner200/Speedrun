@@ -40,6 +40,11 @@ export class EffectsScene extends Phaser.Scene {
     this.player = player;
   }
 
+  setDebugFps(enabled: boolean): void {
+    this.fpsText?.setVisible(enabled);
+    this.debugUpdateMs = 0;
+  }
+
   setQuality(quality: 'low' | 'medium' | 'high'): void {
     this.quality = quality;
     const count = quality === 'low' ? 4 : quality === 'medium' ? 8 : 12;
