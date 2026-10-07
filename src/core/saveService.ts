@@ -166,7 +166,7 @@ export class SaveService {
   }
 
   static markTutorialSeen(): void { const data = this.load(); data.tutorialSeen = true; this.save(data); }
-  static setSetting(key: keyof SaveData['settings'], value: boolean): void { const data = this.load(); data.settings[key] = value; this.save(data); }
+  static setSetting<K extends keyof SaveData['settings']>(key: K, value: SaveData['settings'][K]): void { const data = this.load(); data.settings[key] = value; this.save(data); }
   static ensureMissions(today: string): MissionDefinition[] {
     const data = this.load();
     if (data.missions.date !== today || data.missions.items.length !== 3) {
