@@ -43,5 +43,14 @@
 - [ ] Watch for growing obstacle/pickup counts or memory usage.
 - [ ] Verify no visible hitch occurs when old objects leave the screen.
 
+## Visual / performance QA
+- [ ] Verify Sunny City → Neon Night → Jungle Ruins transitions are readable at speed.
+- [ ] Verify Low/Medium/High quality changes effects without changing gameplay hitboxes.
+- [ ] Verify sustained low FPS automatically falls back to Low quality.
+- [ ] Verify FPS debug overlay can be enabled/disabled from Settings.
+- [ ] Verify effect particle count never exceeds the configured 70-object pool.
+- [ ] Verify 30+ minute run has no visible effect/object-count growth.
+- [ ] Verify gameplay remains readable for color-blind players using obstacle shape as well as color.
+
 ## Release gate
 Do not deploy the final build until automated checks and real-device checks above pass.
