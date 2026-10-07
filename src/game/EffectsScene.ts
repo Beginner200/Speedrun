@@ -118,7 +118,14 @@ export class EffectsScene extends Phaser.Scene {
       this.active.push(created);
       return created;
     }
-    return this.active[0] ?? this.pool[0];
+    const recycled = this.active.shift();
+    if (recycled) {
+      this.tweens.killTweensOf(recycled);
+      recycled.setVisible(false).setActive(false).setAlpha(1).setScale(1);
+      this.active.push(recycled);
+      return recycled;
+    }
+    return this.pool[0];
   }
 
   private release(p: FxParticle): void {
