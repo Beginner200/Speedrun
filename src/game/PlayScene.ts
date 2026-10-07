@@ -358,10 +358,7 @@ export class PlayScene extends Phaser.Scene {
     const panel = this.add.rectangle(width/2,height*.48,Math.min(width-34,330),height*.58,0x10233a,0.98).setStrokeStyle(3,isNewBest?0xffd166:0x36516f,.95).setDepth(20);
     this.add.text(width/2,height*.23,isNewBest?'NEW BEST!':'RUN OVER',{fontFamily:'Arial',fontSize:isNewBest?'34px':'36px',color:isNewBest?'#ffd166':'#ffffff',fontStyle:'bold'}).setOrigin(.5).setDepth(21);
     if(isNewBest)this.add.text(width/2,height*.285,'★  PERSONAL RECORD  ★',{fontFamily:'Arial',fontSize:'11px',color:'#5ee7c4',fontStyle:'bold',letterSpacing:2}).setOrigin(.5).setDepth(21);
-    const result=this.add.text(width/2,height*.37,'SCORE  '+this.score+'
-RUN COINS  '+this.coins+'
-BEST  '+this.bestScore+'
-BANK  '+SaveService.load().coins,{fontFamily:'Arial',fontSize:'18px',color:'#dbe7f3',align:'center',lineSpacing:7,fontStyle:'bold'}).setOrigin(.5).setDepth(21);
+    const result=this.add.text(width/2,height*.37,'SCORE  '+this.score+'\\nRUN COINS  '+this.coins+'\\nBEST  '+this.bestScore+'\\nBANK  '+SaveService.load().coins,{fontFamily:'Arial',fontSize:'18px',color:'#dbe7f3',align:'center',lineSpacing:7,fontStyle:'bold'}).setOrigin(.5).setDepth(21);
     const targetScore=result; this.tweens.add({targets:targetScore,alpha:0.65,duration:180,yoyo:true});
     const items:Phaser.GameObjects.GameObject[]=[overlay,panel,result];
     if(canRevive){
