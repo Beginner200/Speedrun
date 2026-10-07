@@ -82,11 +82,12 @@
 - Vercel deployment remains intentionally deferred until the visual upgrade and final QA are complete.
 
 ## Day 7 — Remaining
-- Add contact-shadow polish, speed trails, dust, biome backgrounds, themed obstacles and lane surfaces.
+- Remaining: contact-shadow polish, additional speed trails/dust, deeper biome art, themed obstacles and lane surfaces.
 - Add biome transition presentation and effects.
-- Restyle Home, Shop, Daily Reward, Game Over and HUD with the glossy UI direction.
+- Restyled Home, Shop, Daily Reward, Game Over and HUD with the glossy UI direction.
+- Added reusable glossy UI styling with press feedback and highlighted states.
 - Add shield glow, pickup bursts, near-miss streaks and quality-aware particles.
-- Add Low/Medium/High quality controls and FPS auto-downgrade.
+- Added Low/Medium/High quality controls and automatic Low fallback after sustained sub-40 FPS.
 - Add manifest validation and skin/biome automated tests.
 - Complete performance/readability/device QA.
 - Generate final Android release assets, screenshots and signed AAB after QA.
