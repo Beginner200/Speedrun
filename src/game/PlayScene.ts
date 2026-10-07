@@ -112,12 +112,12 @@ export class PlayScene extends Phaser.Scene {
     this.scene.launch('VisualOverlayScene');
     this.scene.launch('WorldVisualScene');
     this.scene.launch('EffectsScene');
-    this.distanceText = this.add.text(18, 18, 'DIST 0m', { fontFamily: 'Arial', fontSize: '20px', color: '#fff', fontStyle: 'bold' }).setDepth(10);
+    this.add.rectangle(62, 34, 112, 48, 0x0b1728, 0.9).setStrokeStyle(2, 0x36516f, 0.8).setDepth(9);\n    this.add.rectangle(width - 62, 34, 112, 48, 0x0b1728, 0.9).setStrokeStyle(2, 0x36516f, 0.8).setDepth(9);\n    this.add.rectangle(width / 2, 52, 42, 42, 0x10233a, 0.95).setStrokeStyle(2, 0x36516f, 0.8).setDepth(9);\n    this.distanceText = this.add.text(18, 18, 'DIST 0m', { fontFamily: 'Arial', fontSize: '18px', color: '#ffffff', fontStyle: 'bold' }).setDepth(10);
     this.scoreText = this.add.text(width - 18, 18, 'SCORE 0', { fontFamily: 'Arial', fontSize: '20px', color: '#fff', fontStyle: 'bold' }).setOrigin(1, 0).setDepth(10);
     this.speedText = this.add.text(18, 46, 'SPEED 1.0x', { fontFamily: 'Arial', fontSize: '15px', color: '#9fb4ca' }).setDepth(10);
     this.powerText = this.add.text(width - 18, 48, '', { fontFamily: 'Arial', fontSize: '14px', color: '#ffffff', align: 'right' }).setOrigin(1, 0).setDepth(10);
     this.comboText = this.add.text(width / 2, 92, '', { fontFamily: 'Arial', fontSize: '19px', color: '#ffd166', fontStyle: 'bold' }).setOrigin(0.5).setDepth(11);
-    this.pauseButton = this.add.text(width / 2, 52, 'Ⅱ', { fontFamily: 'Arial', fontSize: '24px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(12).setInteractive({ useHandCursor: true });
+    this.pauseButton = this.add.text(width / 2, 52, 'Ⅱ', { fontFamily: 'Arial', fontSize: '20px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(12).setInteractive({ useHandCursor: true });
     this.pauseButton.on('pointerup', () => this.togglePause());
 
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
