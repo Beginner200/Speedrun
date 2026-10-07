@@ -130,7 +130,7 @@ export class WorldVisualScene extends Phaser.Scene {
     }
   }
 
-  private showTransition(title: string, palette: typeof PALETTE.biomes.sunnyCity): void {
+  private showTransition(title: string, palette: (typeof PALETTE.biomes)[keyof typeof PALETTE.biomes]): void {
     this.transition?.destroy();
     const { width } = this.scale;
     const shade = this.add.rectangle(width / 2, 112, width - 28, 54, palette.sky, 0.92).setStrokeStyle(2, palette.divider, 0.75);
