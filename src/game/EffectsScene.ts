@@ -17,6 +17,7 @@ export class EffectsScene extends Phaser.Scene {
   private fpsFrames = 0;
   private lowFpsSeconds = 0;
   private fpsText?: Phaser.GameObjects.Text;
+  private debugUpdateMs = 0;
 
   constructor() { super('EffectsScene'); }
 
@@ -31,6 +32,7 @@ export class EffectsScene extends Phaser.Scene {
       this.speedLines.push(line);
     }
     this.events.on(Phaser.Scenes.Events.UPDATE, this.updateFx, this);
+    this.fpsText = this.add.text(8, 8, '', { fontFamily: 'Arial', fontSize: '11px', color: '#ffffff', backgroundColor: '#07111f', padding: { left: 5, right: 5, top: 3, bottom: 3 } }).setDepth(50).setScrollFactor(0).setVisible(SaveService.load().settings.debugFps);
     this.setQuality(this.quality);
   }
 
@@ -126,6 +128,8 @@ export class EffectsScene extends Phaser.Scene {
     const play = this.scene.get('PlayScene') as unknown as { speed?: number; magnetTimer?: number; shieldTimer?: number; player?: Phaser.GameObjects.Rectangle } | undefined;
     if (!play || !this.scene.isActive('PlayScene')) return;
     this.fpsWindowMs += delta; this.fpsFrames += 1;
+    this.debugUpdateMs += delta;
+    if (this.fpsText?.visible && this.debugUpdateMs >= 250) { this.fpsText.setText('FPS ' + Math.round(this.game.loop.actualFps) + '  ' + this.quality.toUpperCase()); this.debugUpdateMs = 0; }
     if (this.fpsWindowMs >= 1000) {
       const fps = this.fpsFrames * 1000 / this.fpsWindowMs;
       if (fps < 40) this.lowFpsSeconds += this.fpsWindowMs / 1000; else this.lowFpsSeconds = Math.max(0, this.lowFpsSeconds - 0.5);
