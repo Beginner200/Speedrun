@@ -11,6 +11,7 @@ export class SettingsScene extends Phaser.Scene {
     this.add.text(width / 2, 50, 'SETTINGS', { fontFamily: 'Arial', fontSize: '32px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
 
     const save = SaveService.load();
+    const debugY = 130 + 3 * 68;
     const rows: Array<{ key: 'sound' | 'music' | 'vibration'; label: string }> = [
       { key: 'sound', label: 'Sound Effects' },
       { key: 'music', label: 'Music' },
@@ -36,8 +37,13 @@ export class SettingsScene extends Phaser.Scene {
       });
     });
 
-    this.add.text(width / 2, 350, 'Visual Quality', { fontFamily: 'Arial', fontSize: '18px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
-    const quality = this.add.text(width / 2, 382, save.settings.quality.toUpperCase(), {
+    const debugButton = this.add.rectangle(width / 2, debugY, width - 42, 54, 0x142237).setInteractive({ useHandCursor: true });
+    this.add.text(32, debugY, 'Debug FPS Overlay', { fontFamily: 'Arial', fontSize: '16px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0, 0.5);
+    const debugState = this.add.text(width - 32, debugY, save.settings.debugFps ? 'ON' : 'OFF', { fontFamily: 'Arial', fontSize: '15px', color: save.settings.debugFps ? '#9fe8d1' : '#9fb4ca', fontStyle: 'bold' }).setOrigin(1, 0.5);
+    debugButton.on('pointerup', () => { const next = !SaveService.load().settings.debugFps; SaveService.setSetting('debugFps', next); debugState.setText(next ? 'ON' : 'OFF'); debugState.setColor(next ? '#9fe8d1' : '#9fb4ca'); const fx = this.scene.get('EffectsScene') as unknown as { setDebugFps?: (enabled: boolean) => void }; fx?.setDebugFps?.(next); });
+
+    this.add.text(width / 2, 410, 'Visual Quality', { fontFamily: 'Arial', fontSize: '18px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
+    const quality = this.add.text(width / 2, 442, save.settings.quality.toUpperCase(), {
       fontFamily: 'Arial', fontSize: '15px', color: '#5ee7c4', fontStyle: 'bold'
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
@@ -49,18 +55,18 @@ export class SettingsScene extends Phaser.Scene {
       quality.setText(next.toUpperCase());
     });
 
-    this.add.text(width / 2, 430, 'Privacy', { fontFamily: 'Arial', fontSize: '18px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
-    this.add.text(width / 2, 464, 'Dash Dodge works offline. Game progress and scores\nstay on this device. No account is required.', {
+    this.add.text(width / 2, 490, 'Privacy', { fontFamily: 'Arial', fontSize: '18px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
+    this.add.text(width / 2, 524, 'Dash Dodge works offline. Game progress and scores\nstay on this device. No account is required.', {
       fontFamily: 'Arial', fontSize: '13px', color: '#9fb4ca', align: 'center', lineSpacing: 5
     }).setOrigin(0.5);
 
-    const privacy = this.add.text(width / 2, 525, 'VIEW PRIVACY NOTICE', {
+    const privacy = this.add.text(width / 2, 585, 'VIEW PRIVACY NOTICE', {
       fontFamily: 'Arial', fontSize: '14px', color: '#ffd166', fontStyle: 'bold'
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     privacy.on('pointerup', () => this.showPrivacyNotice());
 
-    const reset = this.add.rectangle(width / 2, 610, 220, 54, GAME_CONFIG.danger).setInteractive({ useHandCursor: true });
-    this.add.text(width / 2, 610, 'RESET PROGRESS', { fontFamily: 'Arial', fontSize: '15px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
+    const reset = this.add.rectangle(width / 2, 660, 220, 54, GAME_CONFIG.danger).setInteractive({ useHandCursor: true });
+    this.add.text(width / 2, 660, 'RESET PROGRESS', { fontFamily: 'Arial', fontSize: '15px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
     reset.on('pointerup', () => { SaveService.reset(); this.scene.start('HomeScene'); });
 
     this.add.text(width / 2, height - 25, '‹ HOME', { fontFamily: 'Arial', fontSize: '16px', color: '#ffffff', fontStyle: 'bold' })
