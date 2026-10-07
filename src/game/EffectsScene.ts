@@ -99,10 +99,13 @@ export class EffectsScene extends Phaser.Scene {
 
   private acquire(): FxParticle {
     const p = this.pool.pop();
-    if (p) return p;
-    return this.pool.length + this.active.length < 70
-      ? this.add.circle(0, 0, 4, 0xffffff).setDepth(8)
-      : this.active[0];
+    if (p) { this.active.push(p); return p; }
+    if (this.pool.length + this.active.length < 70) {
+      const created = this.add.circle(0, 0, 4, 0xffffff).setDepth(8);
+      this.active.push(created);
+      return created;
+    }
+    return this.active[0] ?? this.pool[0];
   }
 
   private release(p: FxParticle): void {
