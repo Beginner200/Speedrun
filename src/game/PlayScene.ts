@@ -111,6 +111,7 @@ export class PlayScene extends Phaser.Scene {
     this.player = this.add.rectangle(this.laneX[this.targetLane], height * GAME_CONFIG.playerYRatio, 42, 58, selectedSkin.color).setDepth(3).setStrokeStyle(3, 0xffffff, 0.9);
     this.scene.launch('VisualOverlayScene');
     this.scene.launch('WorldVisualScene');
+    this.scene.launch('EffectsScene');
     this.distanceText = this.add.text(18, 18, 'DIST 0m', { fontFamily: 'Arial', fontSize: '20px', color: '#fff', fontStyle: 'bold' }).setDepth(10);
     this.scoreText = this.add.text(width - 18, 18, 'SCORE 0', { fontFamily: 'Arial', fontSize: '20px', color: '#fff', fontStyle: 'bold' }).setOrigin(1, 0).setDepth(10);
     this.speedText = this.add.text(18, 46, 'SPEED 1.0x', { fontFamily: 'Arial', fontSize: '15px', color: '#9fb4ca' }).setDepth(10);
@@ -252,6 +253,8 @@ export class PlayScene extends Phaser.Scene {
         if (this.shieldTimer > 0) {
           this.shieldTimer = 0;
           this.flashPlayer();
+          const effects = this.scene.get('EffectsScene') as unknown as { shieldHit?: (x:number,y:number)=>void };
+          effects.shieldHit?.(this.player.x, this.player.y);
           AudioService.powerUp();
           HapticsService.impact();
           this.releaseObstacle(i);
@@ -280,6 +283,8 @@ export class PlayScene extends Phaser.Scene {
         if (pickup.kind === 'magnet') this.magnetTimer = GAME_CONFIG.magnetDurationMs;
         else if (pickup.kind === 'shield') this.shieldTimer = GAME_CONFIG.shieldDurationMs;
         else this.coins += pickup.value;
+        const effects = this.scene.get('EffectsScene') as unknown as { coinPickup?: (x:number,y:number)=>void; powerPickup?: (x:number,y:number,color:number)=>void };
+        if (pickup.kind === 'coin') effects.coinPickup?.(pickup.x, pickup.y); else effects.powerPickup?.(pickup.x, pickup.y, pickup.kind === 'shield' ? GAME_CONFIG.shield : GAME_CONFIG.magnet);
         this.collectFeedback(pickup);
         if (pickup.kind === 'coin') { AudioService.coin(); HapticsService.success(); }
         else { AudioService.powerUp(); HapticsService.success(); }
@@ -298,6 +303,8 @@ export class PlayScene extends Phaser.Scene {
     this.comboTimer = state.timerMs;
     this.scoreBonus = state.bonus;
     AudioService.nearMiss();
+    const effects = this.scene.get('EffectsScene') as unknown as { nearMiss?: (x:number,y:number)=>void };
+    effects.nearMiss?.(this.player.x, this.player.y);
     HapticsService.warning();
     const popup = this.add.text(this.player.x, this.player.y - 48, this.combo > 1 ? `NEAR MISS x${this.combo}` : 'NEAR MISS!', { fontFamily: 'Arial', fontSize: '16px', color: '#ffd166', fontStyle: 'bold' }).setOrigin(0.5).setDepth(15);
     this.tweens.add({ targets: popup, y: popup.y - 32, alpha: 0, duration: 500, onComplete: () => popup.destroy() });
@@ -326,6 +333,8 @@ export class PlayScene extends Phaser.Scene {
     AudioService.hit();
     HapticsService.impact();
     this.cameras.main.shake(180, 0.008);
+    const effects = this.scene.get('EffectsScene') as unknown as { crash?: (x:number,y:number)=>void };
+    effects.crash?.(this.player.x, this.player.y);
     this.showGameOverPanel();
   }
 
@@ -437,6 +446,8 @@ export class PlayScene extends Phaser.Scene {
     this.targetLane = next;
     this.inputCooldown = GAME_CONFIG.laneInputBufferMs;
     HapticsService.pulse(12);
+    const effects = this.scene.get('EffectsScene') as unknown as { laneChange?: (x:number,y:number)=>void };
+    effects.laneChange?.(this.player.x, this.player.y);
     this.tweens.add({ targets: this.player, x: this.laneX[this.targetLane], duration: GAME_CONFIG.laneTweenMs, ease: 'Quad.easeOut' });
   }
 
