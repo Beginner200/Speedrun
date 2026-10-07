@@ -82,14 +82,13 @@
 - Vercel deployment remains intentionally deferred until the visual upgrade and final QA are complete.
 
 ## Day 7 — Remaining
-- Remaining: contact-shadow polish, additional speed trails/dust, deeper biome art, themed obstacles and lane surfaces.
-- Add biome transition presentation and effects.
+- Added deeper parallax dressing for all three biomes, including city silhouettes, neon signs/glow accents, and jungle foliage/ruin arches.
+- Added biome transition banner presentation and layered fade when entering Neon Night or Jungle Ruins.
 - Restyled Home, Shop, Daily Reward, Game Over and HUD with the glossy UI direction.
-- Added reusable glossy UI styling with press feedback and highlighted states.
-- Add shield glow, pickup bursts, near-miss streaks and quality-aware particles.
-- Added Low/Medium/High quality controls and automatic Low fallback after sustained sub-40 FPS.
-- Add manifest validation and skin/biome automated tests.
-- Complete performance/readability/device QA.
+- Added shield glow, pickup bursts, near-miss streaks and quality-aware particles.
+- Added Low/Medium/High quality controls, automatic Low fallback after sustained sub-40 FPS, and an optional FPS debug overlay.
+- Added automated visual-system tests for biome boundaries, transition settings, and all eight character skin slots.
+- Remaining: themed obstacle/lane-surface art polish, deeper character animation assets if needed, manifest validation script, final performance/readability/device QA.
 - Generate final Android release assets, screenshots and signed AAB after QA.
 
 ## Existing Release State
