@@ -112,7 +112,10 @@ export class PlayScene extends Phaser.Scene {
     this.scene.launch('VisualOverlayScene');
     this.scene.launch('WorldVisualScene');
     this.scene.launch('EffectsScene');
-    this.add.rectangle(62, 34, 112, 48, 0x0b1728, 0.9).setStrokeStyle(2, 0x36516f, 0.8).setDepth(9);\n    this.add.rectangle(width - 62, 34, 112, 48, 0x0b1728, 0.9).setStrokeStyle(2, 0x36516f, 0.8).setDepth(9);\n    this.add.rectangle(width / 2, 52, 42, 42, 0x10233a, 0.95).setStrokeStyle(2, 0x36516f, 0.8).setDepth(9);\n    this.distanceText = this.add.text(18, 18, 'DIST 0m', { fontFamily: 'Arial', fontSize: '18px', color: '#ffffff', fontStyle: 'bold' }).setDepth(10);
+    this.add.rectangle(62, 34, 112, 48, 0x0b1728, 0.9).setStrokeStyle(2, 0x36516f, 0.8).setDepth(9);
+    this.add.rectangle(width - 62, 34, 112, 48, 0x0b1728, 0.9).setStrokeStyle(2, 0x36516f, 0.8).setDepth(9);
+    this.add.rectangle(width / 2, 52, 42, 42, 0x10233a, 0.95).setStrokeStyle(2, 0x36516f, 0.8).setDepth(9);
+    this.distanceText = this.add.text(18, 18, 'DIST 0m', { fontFamily: 'Arial', fontSize: '18px', color: '#ffffff', fontStyle: 'bold' }).setDepth(10);
     this.scoreText = this.add.text(width - 18, 18, 'SCORE 0', { fontFamily: 'Arial', fontSize: '20px', color: '#fff', fontStyle: 'bold' }).setOrigin(1, 0).setDepth(10);
     this.speedText = this.add.text(18, 46, 'SPEED 1.0x', { fontFamily: 'Arial', fontSize: '15px', color: '#9fb4ca' }).setDepth(10);
     this.powerText = this.add.text(width - 18, 48, '', { fontFamily: 'Arial', fontSize: '14px', color: '#ffffff', align: 'right' }).setOrigin(1, 0).setDepth(10);
@@ -355,7 +358,10 @@ export class PlayScene extends Phaser.Scene {
     const panel = this.add.rectangle(width/2,height*.48,Math.min(width-34,330),height*.58,0x10233a,0.98).setStrokeStyle(3,isNewBest?0xffd166:0x36516f,.95).setDepth(20);
     this.add.text(width/2,height*.23,isNewBest?'NEW BEST!':'RUN OVER',{fontFamily:'Arial',fontSize:isNewBest?'34px':'36px',color:isNewBest?'#ffd166':'#ffffff',fontStyle:'bold'}).setOrigin(.5).setDepth(21);
     if(isNewBest)this.add.text(width/2,height*.285,'★  PERSONAL RECORD  ★',{fontFamily:'Arial',fontSize:'11px',color:'#5ee7c4',fontStyle:'bold',letterSpacing:2}).setOrigin(.5).setDepth(21);
-    const result=this.add.text(width/2,height*.37,'SCORE  '+this.score+'\nRUN COINS  '+this.coins+'\nBEST  '+this.bestScore+'\nBANK  '+SaveService.load().coins,{fontFamily:'Arial',fontSize:'18px',color:'#dbe7f3',align:'center',lineSpacing:7,fontStyle:'bold'}).setOrigin(.5).setDepth(21);
+    const result=this.add.text(width/2,height*.37,'SCORE  '+this.score+'
+RUN COINS  '+this.coins+'
+BEST  '+this.bestScore+'
+BANK  '+SaveService.load().coins,{fontFamily:'Arial',fontSize:'18px',color:'#dbe7f3',align:'center',lineSpacing:7,fontStyle:'bold'}).setOrigin(.5).setDepth(21);
     const targetScore=result; this.tweens.add({targets:targetScore,alpha:0.65,duration:180,yoyo:true});
     const items:Phaser.GameObjects.GameObject[]=[overlay,panel,result];
     if(canRevive){
