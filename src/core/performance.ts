@@ -13,8 +13,9 @@ export class PerformanceMonitor {
 
   addFrame(deltaMs: number): void {
     const safeDelta = Math.max(0.1, deltaMs);
-    this.samples.push({ fps: 1000 / safeDelta, frameMs: safeDelta });
-    if (this.samples.length > this.maxSamples) this.samples.shift();
+    const sample = { fps: 1000 / safeDelta, frameMs: safeDelta };
+    if (this.samples.length >= this.maxSamples) this.samples.shift();
+    this.samples.push(sample);
   }
 
   getAverageFps(): number {
