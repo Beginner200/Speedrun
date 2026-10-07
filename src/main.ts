@@ -9,6 +9,7 @@ import { SettingsScene } from './game/SettingsScene';
 import { TutorialScene } from './game/TutorialScene';
 import { VisualOverlayScene } from './game/VisualOverlayScene';
 import { WorldVisualScene } from './game/WorldVisualScene';
+import { EffectsScene } from './game/EffectsScene';
 import './styles.css';
 
 const game = new Phaser.Game({
@@ -19,7 +20,7 @@ const game = new Phaser.Game({
   backgroundColor: '#07111f',
   scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH, width: 390, height: 844 },
   input: { activePointers: 2 },
-  scene: [HomeScene, PlayScene, ShopScene, DailyScene, MissionScene, LeaderboardScene, SettingsScene, TutorialScene, VisualOverlayScene, WorldVisualScene],
+  scene: [HomeScene, PlayScene, ShopScene, DailyScene, MissionScene, LeaderboardScene, SettingsScene, TutorialScene, VisualOverlayScene, WorldVisualScene, EffectsScene],
   render: { antialias: true, roundPixels: true }
 });
 
