@@ -1,40 +1,25 @@
 import Phaser from 'phaser';
-import { GAME_CONFIG } from '../config/gameConfig';
 import { SaveService, getSelectedSkin } from '../core/saveService';
-
+import { button, card, title, UI } from '../ui/uiStyle';
 export class HomeScene extends Phaser.Scene {
   constructor() { super('HomeScene'); }
-
   create(): void {
-    const { width, height } = this.scale;
-    const save = SaveService.load();
-    const skin = getSelectedSkin();
-    const today = new Date().toISOString().slice(0, 10);
-    SaveService.ensureMissions(today);
-    this.cameras.main.setBackgroundColor(GAME_CONFIG.background);
-
-    this.add.rectangle(width / 2, height / 2, GAME_CONFIG.roadWidth, height, GAME_CONFIG.road);
-    this.add.text(width / 2, height * 0.09, 'DASH DODGE', { fontFamily: 'Arial', fontSize: '40px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
-    this.add.text(width / 2, height * 0.145, '3-LANE ENDLESS RUN', { fontFamily: 'Arial', fontSize: '14px', color: '#9fb4ca', letterSpacing: 2 }).setOrigin(0.5);
-    this.add.rectangle(width / 2, height * 0.245, 54, 70, skin.color).setStrokeStyle(3, 0xffffff, 0.9);
-    this.add.text(width / 2, height * 0.335, `BEST  ${save.bestScore}`, { fontFamily: 'Arial', fontSize: '18px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
-    this.add.text(width / 2, height * 0.375, `COINS  ${save.coins}`, { fontFamily: 'Arial', fontSize: '17px', color: '#ffd166', fontStyle: 'bold' }).setOrigin(0.5);
-
-    this.button(width / 2, height * 0.45, 220, 56, 'PLAY', GAME_CONFIG.accent, '#07111f', () => this.scene.start(save.tutorialSeen ? 'PlayScene' : 'TutorialScene'));
-    this.button(width / 2, height * 0.525, 220, 44, 'DAILY REWARD', GAME_CONFIG.shield, '#07111f', () => this.scene.start('DailyScene'));
-    this.button(width / 2, height * 0.595, 220, 44, 'MISSIONS', GAME_CONFIG.magnet, '#07111f', () => this.scene.start('MissionScene'));
-    this.button(width / 2, height * 0.665, 220, 44, 'LEADERBOARD', 0x3c5876, '#ffffff', () => this.scene.start('LeaderboardScene'));
-    this.button(width / 2, height * 0.735, 220, 44, 'SHOP', GAME_CONFIG.coin, '#07111f', () => this.scene.start('ShopScene'));
-    this.button(width / 2, height * 0.805, 220, 44, 'SETTINGS', 0x2b4057, '#ffffff', () => this.scene.start('SettingsScene'));
-    this.add.text(width / 2, height * 0.91, 'Swipe or tap left/right to change lanes', { fontFamily: 'Arial', fontSize: '13px', color: '#9fb4ca' }).setOrigin(0.5);
-  }
-
-  private button(x: number, y: number, w: number, h: number, label: string, fill: number, textColor: string, onClick: () => void): void {
-    const button = this.add.rectangle(x, y, w, h, fill).setInteractive({ useHandCursor: true });
-    this.add.text(x, y, label, { fontFamily: 'Arial', fontSize: '15px', color: textColor, fontStyle: 'bold' }).setOrigin(0.5);
-    button.on('pointerup', onClick);
-    button.on('pointerdown', () => button.setAlpha(0.8));
-    button.on('pointerout', () => button.setAlpha(1));
-    button.on('pointerup', () => button.setAlpha(1));
+    const { width, height } = this.scale; const save = SaveService.load(); const skin = getSelectedSkin();
+    SaveService.ensureMissions(new Date().toISOString().slice(0, 10)); this.cameras.main.setBackgroundColor(UI.bg);
+    for (let i=0;i<5;i++) this.add.rectangle(width/2,height*(0.12+i*0.18),width,height*0.18,[0x102945,0x0f2840,0x112f43,0x123c47,0x17464b][i],0.22);
+    title(this,'DASH DODGE',height*0.075);
+    this.add.text(width/2,height*0.125,'3-LANE ENDLESS RUN',{fontFamily:'Arial',fontSize:'13px',color:UI.muted,letterSpacing:2}).setOrigin(.5);
+    const hero=card(this,width/2,height*.245,112,118,true).setFillStyle(skin.color); hero.setStrokeStyle(3,0xffffff,.85);
+    this.add.circle(width/2,height*.225,22,0xffffff,.22); this.add.rectangle(width/2,height*.27,34,42,0xffffff,.2).setStrokeStyle(2,0xffffff,.4);
+    this.tweens.add({targets:hero,y:hero.y-4,duration:900,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
+    this.add.text(width/2,height*.335,skin.name.toUpperCase(),{fontFamily:'Arial',fontSize:'11px',color:'#ffffff',fontStyle:'bold',letterSpacing:1}).setOrigin(.5);
+    this.add.text(width/2,height*.385,'BEST  '+save.bestScore+'     •     COINS  '+save.coins,{fontFamily:'Arial',fontSize:'14px',color:UI.gold,fontStyle:'bold'}).setOrigin(.5);
+    button(this,width/2,height*.455,238,58,'▶  PLAY',UI.accent,'#07111f',()=>this.scene.start(save.tutorialSeen?'PlayScene':'TutorialScene'));
+    button(this,width/2,height*.535,238,45,'🎁  DAILY REWARD',0x48cfa8,'#07111f',()=>this.scene.start('DailyScene'));
+    button(this,width/2,height*.60,238,45,'◆  MISSIONS',0x7bdff2,'#07111f',()=>this.scene.start('MissionScene'));
+    button(this,width/2,height*.665,238,45,'🏆  LEADERBOARD',UI.panel2,'#ffffff',()=>this.scene.start('LeaderboardScene'));
+    button(this,width/2,height*.73,238,45,'◈  SHOP',UI.gold,'#07111f',()=>this.scene.start('ShopScene'));
+    button(this,width/2,height*.795,238,45,'⚙  SETTINGS',UI.panel2,'#ffffff',()=>this.scene.start('SettingsScene'));
+    this.add.text(width/2,height*.9,'SWIPE  •  TAP  •  ARROWS',{fontFamily:'Arial',fontSize:'11px',color:UI.muted,fontStyle:'bold',letterSpacing:1}).setOrigin(.5);
   }
 }
